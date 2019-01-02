@@ -1,3 +1,4 @@
+from Game import Game
 def search(s, game, nnet):
     if game.gameEnded(s): return -game.gameReward(s)
 
