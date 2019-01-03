@@ -1,3 +1,7 @@
+import ast
+import numpy
+
+import numpy as np
 from math import exp
 from typing import  Dict
 
@@ -17,7 +21,7 @@ class Asset:
     def set_price(self, new_price):
         self.price = new_price
 
-    'exponential market impact function accprding to Caccioli 2012'
+    'exponential market impact function according to Caccioli 2012'
     def get_market_impact(self, order: Order):
         frac_liquidated = order.num_shares / self.total_shares
         return exp(-ALPHA * frac_liquidated)
@@ -57,14 +61,8 @@ class Fund:
 
 
 class AssetFundsNetwork:
-    def __init__(self, input_file):
-        self.funds = {}
-        self.assets = {}
-        self.mi_calc = MarketImpactCalculator()
-        return
-
-    def __init__(self, portfolio_matrix, num_assets, initial_capitals, initial_leverages, tolerances,
-                 assets_initial_prices, assets_num_shares, mi_calc: MarketImpactCalculator):
+    def __init__(self, portfolio_matrix, num_funds, num_assets, initial_capitals, initial_leverages,
+                 assets_initial_prices, tolerances, assets_num_shares, mi_calc: MarketImpactCalculator):
         self.mi_calc = mi_calc
         self.funds = {}
         self.assets = {}
@@ -72,16 +70,33 @@ class AssetFundsNetwork:
             symbol = 'A' + str(i)
             self.assets[symbol] = Asset(assets_initial_prices[i], assets_num_shares[i], symbol)
         funds = {}
-        for i in range(portfolio_matrix):
+        for i in range(num_funds):
             portfolio = {}
-            for j in portfolio_matrix[i]:
+            fund_symbol = 'F' + str(i)
+            for j in range(num_assets):
                 if portfolio_matrix[i][j] != 0:
                     'TODO: verify no fractions'
                     'portfolio.append(Holding(self.assets[j], portfolio_matrix[i][j] / self.assets[j].price))'
-                    portfolio['A' + self.assets[j]] = portfolio_matrix[i][j] / self.assets[j].price
-            fund_symbol = 'F' + str(i)
+                    portfolio[fund_symbol] = portfolio_matrix[i][j] / self.assets['A' + str(j)].price
             funds[fund_symbol] = Fund(fund_symbol, portfolio, initial_capitals[i], initial_leverages[i], tolerances[i])
         return
+
+    @classmethod
+    def from_file(cls, input_file, assets_initial_prices, tolerances, assets_num_shares, mi_calc: MarketImpactCalculator):
+        params = np.load(input_file).item()
+        num_assets = int(params['num_assets'])
+        num_funds = int(params['num_funds'])
+        initial_capitals = ast.literal_eval(params['initial_capitals'])
+        initial_leverages = ast.literal_eval(params['initial_leverages'])
+        a = np.zeros((num_funds, num_assets), numpy.int8)
+        lines = params['portfolio_matrix'].split(';')
+        for i in range(num_funds):
+            vals = lines[i].split(',')
+            for j in range(num_assets):
+                a[i][j] += int(vals[j])
+
+        cls(a, num_funds, num_assets, initial_capitals,initial_leverages,
+            assets_initial_prices, tolerances, assets_num_shares, mi_calc)
 
     def apply_action(self, action: Action):
         liquidation_orders = []

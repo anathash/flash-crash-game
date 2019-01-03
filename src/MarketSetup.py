@@ -1,13 +1,13 @@
-from math import exp
+import sys
 
+import numpy
 import numpy as np
-
 
 'TODO: factor in initial price and market cap of assets'
 
 
 def gen_bipartite_network(num_funds, num_assets, density, pref_attach, initial_capital, initial_leverage, sigma):
-    a = np.zeros((num_funds, num_assets))
+    a = np.zeros((num_funds, num_assets), numpy.int8)
     for i in range(num_funds):
         investments = {}
         total = a.sum(axis=1)
@@ -30,7 +30,7 @@ def gen_bipartite_network(num_funds, num_assets, density, pref_attach, initial_c
         for j in range(num_assets):
             asset_selection_prob[j] = rank[j]/rank_sum
         'Calculate fund fractional investment to assets'
-        'TODO: factor in initial asset price and make sure values are mu ltiplications of single share price'
+        'TODO: factor in initial asset price and make sure values are multiplications of single share price'
         frac = np.random.normal(density, sigma, 1)
         k_fund = min(max(int(frac * num_assets), 1), num_assets)
         'TODO: make sure distinct'
@@ -43,7 +43,8 @@ def gen_bipartite_network(num_funds, num_assets, density, pref_attach, initial_c
             a[i][assets_selected[k]] = normed_investment_portions[k]
         available_cash = initial_capital * (1 + initial_leverage)
         for j in range(num_assets):
-            a[i][j] = available_cash * a[i][j]
+            a[i][j] = int(round(available_cash * a[i][j]))
+    return a
 
 
 'Construct board and save class to file'
@@ -51,8 +52,26 @@ def gen_bipartite_network(num_funds, num_assets, density, pref_attach, initial_c
 
 def gen_network_and_save_to_file(file_name, num_funds, num_assets, density, pref_attach,
                                  initial_capital, initial_leverage, sigma):
+    a = gen_bipartite_network(num_funds, num_assets, density, pref_attach, initial_capital, initial_leverage, sigma)
+    params = {}
+
+    params['num_funds'] = str(num_funds)
+    params['num_assets'] = str(num_assets)
+    initial_capitals = [initial_capital] * num_funds
+    params['initial_capitals'] = str(initial_capitals)
+    initial_leverages = [initial_leverage] * num_funds
+    params['initial_leverages'] = str(initial_leverages)
+    mtrx_str = ''
+    for i in range(num_funds):
+        for j in range(num_assets):
+            mtrx_str += str(a[i][j]) + ','
+        mtrx_str += ';'
+    params['portfolio_matrix'] = mtrx_str
+
+    np.save(file_name, params)
     return
 
 
 if __name__ == '__main__':
-    gen_bipartite_network(4, 3, 1, 1, 100, 2, 1)
+    gen_network_and_save_to_file('../test/a.txt', 4, 3, 1, 1, 100, 2, 1)
+"f.writelines(','.join(str(j) for j in i) + '\n' for i in a)"
