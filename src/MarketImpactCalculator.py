@@ -3,8 +3,8 @@ from Actions import Order, Sell
 from Constants import ALPHA
 
 
-class MarketImpactCalculator:
-
+class ExponentialMarketImpactCalculator:
+    'aacording to   Caccioli1,: mi = e^(-ALPHA*frac_of_asset_liquidated)'
     @staticmethod
     def get_market_impact(order: Order, asset_total_shares):
         frac_liquidated = order.num_shares / asset_total_shares

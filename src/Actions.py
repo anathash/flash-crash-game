@@ -9,12 +9,12 @@ class Order:
 
 class Buy(Order):
     def __init__(self, asset_symbol: str, num_shares: int):
-        super().__init__(0, asset_symbol, num_shares)
+        super().__init__(asset_symbol, num_shares)
 
 
 class Sell(Order):
     def __init__(self, asset_symbol: str, num_shares: int):
-        super().__init__(0, asset_symbol, num_shares)
+        super().__init__(asset_symbol, num_shares)
 
 
 class Action:

@@ -2,13 +2,13 @@ import unittest
 
 
 from AssetFundNetwork import Asset, Fund, AssetFundsNetwork
-from MarketImpactCalculator import MarketImpactCalculator
+from MarketImpactCalculator import ExponentialMarketImpactCalculator
 
 
 class TestFlashCrashGameBoard  (unittest.TestCase):
 
     def test_load_from_file(self):
-        AssetFundsNetwork.from_file('a.txt.npy', [1]*3, [0.5]*4, [1]*4, MarketImpactCalculator())
+        AssetFundsNetwork.from_file('a.txt.npy', [1] * 3, [0.5] * 4, [1] * 4, ExponentialMarketImpactCalculator())
 
     def test_fund_computations(self):
         assets = {'XXX': Asset(1, 10, 'XXX'), 'YYY': Asset(4, 10, 'yyy')}

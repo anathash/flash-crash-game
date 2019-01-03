@@ -21,11 +21,6 @@ class Asset:
     def set_price(self, new_price):
         self.price = new_price
 
-    'exponential market impact function according to Caccioli 2012'
-    def get_market_impact(self, order: Order):
-        frac_liquidated = order.num_shares / self.total_shares
-        return exp(-ALPHA * frac_liquidated)
-
 
 class Fund:
     def __init__(self, symbol, portfolio: Dict[str,int], initial_capital, initial_leverage, tolerance,):
