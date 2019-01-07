@@ -60,7 +60,7 @@ class AttackerTest  (unittest.TestCase):
         with self.assertRaises(ValueError):
             attacker.apply_action(Action(orders))
 
-    def test_gen_orders_rec(self):
+    def test_get_valid_actions(self):
         attacker = Attacker({'a1': 300, 'a2': 400}, ['f1', 'f2'], 0.5, 2)
         expected_orders = \
             [[Sell('a1', 150, 2)], [Sell('a1', 300, 2)],
@@ -70,7 +70,41 @@ class AttackerTest  (unittest.TestCase):
              [Sell('a1', 300, 2), Sell('a2', 200, 2)],
              [Sell('a1', 300, 2), Sell('a2', 400, 2)]]
         e = to_string_list(expected_orders)
-        actual_orders = attacker.get_actions({'a1': Asset(2, 200, 'a1'), 'a2': Asset(2, 300, 'a2')})
+        actual_orders = attacker.get_valid_actions({'a1': Asset(2, 200, 'a1'), 'a2': Asset(2, 300, 'a2')})
+        a = to_string_list(actual_orders)
+        self.assertListEqual(e, a)
+
+    def test_get_valid_actions_max_assets(self):
+        attacker = Attacker({'a1': 300, 'a2': 400}, ['f1', 'f2'], 0.5, 1)
+        expected_orders = \
+            [[Sell('a1', 150, 2)], [Sell('a1', 300, 2)],
+             [Sell('a2', 200, 2)], [Sell('a2', 400, 2)]]
+        e = to_string_list(expected_orders)
+        actual_orders = attacker.get_valid_actions({'a1': Asset(2, 200, 'a1'), 'a2': Asset(2, 300, 'a2')})
+        a = to_string_list(actual_orders)
+        self.assertListEqual(e, a)
+
+    def test_get_valid_actions2(self):
+        attacker = Attacker({'a1': 300, 'a2': 400, 'a3': 100}, ['f1', 'f2'], 0.5, 2)
+        expected_orders = \
+            [[Sell('a1', 150, 2)], [Sell('a1', 300, 2)],
+             [Sell('a2', 200, 2)], [Sell('a2', 400, 2)],
+             [Sell('a3', 50, 2)], [Sell('a3', 100, 2)],
+             [Sell('a1', 150, 2), Sell('a3', 50, 2)],
+             [Sell('a1', 150, 2), Sell('a3', 100, 2)],
+             [Sell('a1', 150, 2), Sell('a2', 200, 2)],
+             [Sell('a1', 150, 2), Sell('a2', 400, 2)],
+             [Sell('a1', 300, 2), Sell('a3', 50, 2)],
+             [Sell('a1', 300, 2), Sell('a3', 100, 2)],
+             [Sell('a1', 300, 2), Sell('a2', 200, 2)],
+             [Sell('a1', 300, 2), Sell('a2', 400, 2)],
+             [Sell('a2', 200, 2), Sell('a3', 50, 2)],
+             [Sell('a2', 200, 2), Sell('a3', 100, 2)],
+             [Sell('a2', 400, 2), Sell('a3', 50, 2)],
+             [Sell('a2', 400, 2), Sell('a3', 100, 2)]]
+        e = to_string_list(expected_orders)
+        actual_orders = attacker.get_valid_actions({'a1': Asset(2, 500, 'a1'), 'a2': Asset(2, 500, 'a2'),
+                                                    'a3': Asset(2, 500, 'a3')})
         a = to_string_list(actual_orders)
         self.assertListEqual(e, a)
 
@@ -112,12 +146,39 @@ class DefenderTest  (unittest.TestCase):
         with self.assertRaises(ValueError):
             defender.apply_action(Action(orders))
 
-    def test_gen_orders_rec(self):
+    def test_get_valid_actions(self):
         defender = Defender(500, 0.5, 2)
         expected_orders = \
             [[Buy('a1', 100, 2)], [Buy('a1', 200, 2)], [Buy('a2', 150, 2)], [Buy('a1', 100, 2), Buy('a2', 150, 2)]]
         e = to_string_list(expected_orders)
-        actual_orders = defender.get_actions({'a1': Asset(2, 200, 'a1'), 'a2': Asset(2, 300, 'a2')})
+        actual_orders = defender.get_valid_actions({'a1': Asset(2, 200, 'a1'), 'a2': Asset(2, 300, 'a2')})
+        a = to_string_list(actual_orders)
+        self.assertListEqual(e, a)
+
+    def test_get_valid_actions_max_assets(self):
+        defender = Defender(500, 0.5, 1)
+        expected_orders = \
+            [[Buy('a1', 100, 2)], [Buy('a1', 200, 2)], [Buy('a2', 150, 2)]]
+        e = to_string_list(expected_orders)
+        actual_orders = defender.get_valid_actions({'a1': Asset(2, 200, 'a1'), 'a2': Asset(2, 300, 'a2')})
+        a = to_string_list(actual_orders)
+        self.assertListEqual(e, a)
+
+    def test_get_valid_actions2(self):
+        defender = Defender(500, 0.5, 2)
+        expected_orders = \
+            [[Buy('a1', 100, 2)], [Buy('a1', 200, 2)], [Buy('a2', 150, 2)],
+             [Buy('a3', 50, 2)], [Buy('a3', 100, 2)],
+             [Buy('a1', 100, 2), Buy('a3', 50, 2)],
+             [Buy('a1', 100, 2), Buy('a3', 100, 2)],
+             [Buy('a1', 100, 2), Buy('a2', 150, 2)],
+             [Buy('a1', 200, 2), Buy('a3', 50, 2)],
+             [Buy('a2', 150, 2), Buy('a3', 50, 2)],
+             [Buy('a2', 150, 2), Buy('a3', 100, 2)]]
+
+        e = to_string_list(expected_orders)
+        actual_orders = defender.get_valid_actions({'a1': Asset(2, 200, 'a1'), 'a2': Asset(2, 300, 'a2'),
+                                                    'a3': Asset(2, 100, 'a3')})
         a = to_string_list(actual_orders)
         self.assertListEqual(e, a)
 
