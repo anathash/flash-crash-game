@@ -7,7 +7,6 @@ from typing import  Dict
 
 import MarketImpactCalculator
 from Actions import Order, Action, Sell
-from Constants import ALPHA
 
 'TODO: do we need the total market cap of assets or do funds hold the entire market'
 
