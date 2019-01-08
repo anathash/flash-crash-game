@@ -48,7 +48,24 @@ def gen_bipartite_network(num_funds, num_assets, density, pref_attach, initial_c
 
 
 'Construct board and save class to file'
+def save_netwrok_to_file(file_name, num_funds, num_assets, initial_capital, initial_leverage):
+    params = {}
 
+    params['num_funds'] = str(num_funds)
+    params['num_assets'] = str(num_assets)
+    initial_capitals = [initial_capital] * num_funds
+    params['initial_capitals'] = str(initial_capitals)
+    initial_leverages = [initial_leverage] * num_funds
+    params['initial_leverages'] = str(initial_leverages)
+    mtrx_str = ''
+    for i in range(num_funds):
+        for j in range(num_assets):
+            mtrx_str += str(a[i][j]) + ','
+        mtrx_str += ';'
+    params['portfolio_matrix'] = mtrx_str
+
+    np.save(file_name, params)
+    return
 
 def gen_network_and_save_to_file(file_name, num_funds, num_assets, density, pref_attach,
                                  initial_capital, initial_leverage, sigma):

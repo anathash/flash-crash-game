@@ -2,7 +2,12 @@ from math import exp
 from Actions import Order, Sell
 
 
-class ExponentialMarketImpactCalculator:
+class MarketImpactCalculator:
+    def get_market_impact(self, order: Order, asset_total_shares):
+        raise NotImplementedError
+
+
+class ExponentialMarketImpactCalculator(MarketImpactCalculator):
     def __init__(self, alpha):
         self.alpha = alpha
 
