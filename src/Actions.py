@@ -8,7 +8,9 @@ class Order:
         self.share_price = share_price
 
     def __eq__(self, other):
-        return self.asset_symbol == other.asset_symbol and self.num_shares == other.num_shares and \
+        return isinstance(other, Order) and \
+               self.asset_symbol == other.asset_symbol and\
+               self.num_shares == other.num_shares and \
                self.share_price == other.share_price
 
 

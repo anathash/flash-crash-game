@@ -1,12 +1,19 @@
 import unittest
 
-import jsonpickle
 import networkx as nx
-from networkx.algorithms import bipartite
 
-from Actions import Sell, Action, Buy
+from Actions import Sell, Action, Buy, Order
 from AssetFundNetwork import Asset, Fund, AssetFundsNetwork
-from MarketImpactCalculator import ExponentialMarketImpactCalculator
+from MarketImpactCalculator import ExponentialMarketImpactCalculator, MarketImpactCalculator
+
+
+class MockMarketImpactTestCalculator(MarketImpactCalculator):
+    def get_market_impact(self, order: Order, asset_total_shares):
+        sign = -1 if isinstance(order, Sell) else 1
+        if sign > 0:
+            return asset_total_shares/order.num_shares
+        else:
+            return order.num_shares/asset_total_shares
 
 
 class TestAsset  (unittest.TestCase):
@@ -57,28 +64,118 @@ class TestFund  (unittest.TestCase):
         self.assertTrue(True, fund.marginal_call(assets))
 
 
-class TestFlashCrashGameBoard  (unittest.TestCase):
+class TestAssetFundsNetwork  (unittest.TestCase):
 
-    def test_nx(self):
+    def test_encode_decode_network(self):
         network = AssetFundsNetwork.generate_random_network(0.5, 3, 2, [1]*3, [2]*3, [1]*2, [2]*3, [1]*3,
                                                             ExponentialMarketImpactCalculator(1))
         network.save_to_file('encoding_decoding_test.json')
-        decoded_network = AssetFundsNetwork.load_from_file('x', ExponentialMarketImpactCalculator(1))
-        funds_decoded = str(jsonpickle.encode(decoded_network.funds))
-        asset_decoded = str(jsonpickle.encode(decoded_network.assets))
-        print(funds_decoded)
-        'a = AssetFundsNetwork( 3, 2, 0.5, [1]*3, [2]*3, [1]*2, [2]*3, [1]*3, ExponentialMarketImpactCalculator(1))'
-"""
-    def test_load_from_file(self):
-        AssetFundsNetwork.from_file('a.txt.npy', [1] * 3, [0.5] * 4, [1] * 4, ExponentialMarketImpactCalculator(1))
+        decoded_network = AssetFundsNetwork.load_from_file('encoding_decoding_test.json',
+                                                           ExponentialMarketImpactCalculator(1))
+        self.assertEqual(network, decoded_network)
 
-    def test_pply_action_no_lliquidation(self):
-        a = [[1, 1], [1, 1], [1, 1]]
-        network = AssetFundsNetwork(a, 3, 2, [1]*3, [2]*3, [1]*2, [2]*3, [1]*3, ExponentialMarketImpactCalculator(1))
-        a = Action([Sell('a1',10,10), Buy('a2',10,10)])
+    def test_generate_random_network(self):
+        num_funds = 3
+        num_assets = 2
+
+        assets_num_shares = [3, 4]
+        initial_prices = [1, 2]
+
+        initial_capitals = [100, 200, 300]
+        initial_leverages = [1, 2, 3]
+        tolerances = [4, 5, 6]
+
+        g = AssetFundsNetwork.generate_random_network(0.5, num_funds, num_assets,initial_capitals,
+                                                      initial_leverages, initial_prices,
+                                                      tolerances, assets_num_shares, ExponentialMarketImpactCalculator(1))
+        assets = g.assets
+        funds = g.funds
+        self.assertEqual(len(assets), num_assets)
+        self.assertEqual(len(funds), num_funds)
+        for i in range(len(assets)):
+            asset = assets['a' + str(i)]
+            self.assertEqual(initial_prices[i], asset.price)
+            self.assertEqual(assets_num_shares[i], asset.total_shares)
+        for i in range(len(funds)):
+            fund = funds['f' + str(i)]
+            self.assertEqual(initial_capitals[i], fund.capital)
+            self.assertEqual(initial_leverages[i], fund.initial_leverage)
+            self.assertEqual(tolerances[i], fund.tolerance)
+
+    def test_generate_network_from_graph(self):
+        num_funds = 2
+        num_assets = 2
+        assets_num_shares = [3, 4]
+        initial_prices = [1, 2]
+        initial_capitals = [100, 200]
+        initial_leverages = [1, 2]
+        tolerances = [4, 5]
+        investment_proportions = {'f0': [0.6, 0.4], 'f1': [1.0]}
+        g = nx.DiGraph()
+        g.add_nodes_from([0, 1, 2, 3])
+        g.add_edges_from([(0, 2), (0, 3), (1, 3)])
+        network = AssetFundsNetwork.gen_network_from_graph(g, investment_proportions, initial_capitals,
+                                                           initial_leverages, initial_prices,
+                                                           tolerances, assets_num_shares,
+                                                           ExponentialMarketImpactCalculator(1))
+        assets = network.assets
+        funds = network.funds
+        self.assertEqual(len(assets), num_assets)
+        self.assertEqual(len(funds), num_funds)
+        for i in range(len(assets)):
+            asset = assets['a' + str(i)]
+            self.assertEqual(initial_prices[i], asset.price)
+            self.assertEqual(assets_num_shares[i], asset.total_shares)
+        for i in range(len(funds)):
+            fund = funds['f' + str(i)]
+            self.assertEqual(initial_capitals[i], fund.capital)
+            self.assertEqual(initial_leverages[i], fund.initial_leverage)
+            self.assertEqual(tolerances[i], fund.tolerance)
+        prot0 = funds['f0'].portfolio
+        self.assertEqual(len(prot0.items()), 2)
+        self.assertEqual(prot0['a0'], 120)
+        self.assertEqual(prot0['a1'], 80)
+
+        prot1 = funds['f1'].portfolio
+        self.assertEqual(len(prot1.items()), 1)
+        self.assertEqual(prot1['a1'], 600)
+        self.assertTrue('a0' not in prot1)
+
+    def test_apply_action_no_liquidation(self):
+        a0 = Asset(price=2, total_shares=40, symbol='a0')
+        a1 = Asset(price=2, total_shares=40, symbol='a1')
+        f0 = Fund('f0', {'a0': 10, 'a1': 10}, 5, 2, 3)
+        f1 = Fund('f1', {'a0': 10, 'a1': 10}, 5, 2, 3)
+        f2 = Fund('f2', {'a0': 10, 'a1': 10}, 5, 2, 3)
+        network = AssetFundsNetwork({'f0': f0, 'f1': f1,'f2': f2}, {'a0': a0, 'a1': a1},
+                                    MockMarketImpactTestCalculator())
+        a = Action([Sell('a0', num_shares=20, share_price=2), Buy('a1', num_shares=10, share_price=2)])
         network.apply_action(a)
-"""
 
+        expected_a0 = Asset(price=1.0, total_shares=40, symbol='a0')
+        expected_a1 = Asset(price=8.0, total_shares=40, symbol='a1')
+        expected_network = AssetFundsNetwork({'f0': f0, 'f1': f1, 'f2': f2}, {'a0': expected_a0, 'a1': expected_a1},
+                                             MockMarketImpactTestCalculator())
+
+        self.assertEqual(network, expected_network)
+
+    def test_apply_action_with_liquidation(self):
+        a0 = Asset(price=1, total_shares=40, symbol='a0')
+        a1 = Asset(price=2, total_shares=40, symbol='a1')
+        f0 = Fund('f0', {'a0': 10}, initial_capital=2, initial_leverage=8, tolerance=2)
+        f1 = Fund('f1', {'a0': 10, 'a1': 1}, initial_capital=1, initial_leverage=1, tolerance=3)
+        network = AssetFundsNetwork({'f0': f0, 'f1': f1}, {'a0': a0, 'a1': a1},
+                                    MockMarketImpactTestCalculator())
+        a = Action([Sell('a0', num_shares=10, share_price=2), Buy('a1', num_shares=10, share_price=2)])
+        network.apply_action(a)
+
+        expected_a0 = Asset(price=0.0625, total_shares=40, symbol='a0')
+        expected_a1 = Asset(price=8.0, total_shares=40, symbol='a1')
+        expected_f0 = Fund('f0', {}, initial_capital=2, initial_leverage=8, tolerance=2)
+        expected_network = AssetFundsNetwork({'f0': expected_f0, 'f1': f1}, {'a0': expected_a0, 'a1': expected_a1},
+                                             MockMarketImpactTestCalculator())
+
+        self.assertEqual(network, expected_network)
 
 if __name__ == '__main__':
     unittest.main()
