@@ -1,5 +1,7 @@
 from Game import Game
-def search(s, game, nnet):
+
+
+def search(s, game:Game, nnet):
     if game.gameEnded(s): return -game.gameReward(s)
 
     if s not in visited:

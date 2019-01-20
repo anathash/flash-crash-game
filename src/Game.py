@@ -3,9 +3,10 @@ from copy import deepcopy
 from GameState import GameState
 
 
-class GameStateLogic:
-    def __init__(self, input_file, defender_initial_capital, attacker_initial_portfolio, attacker_goals):
-        self.state = GameState(input_file, defender_initial_capital, attacker_initial_portfolio, attacker_goals)
+class Game:
+    def __init__(self, init_state:GameState, input_file, defender_initial_capital, attacker_initial_portfolio, attacker_goals):
+        self.state = init_state
+        #self.state = GameState(input_file, defender_initial_capital, attacker_initial_portfolio, attacker_goals)
 
     def game_reward(self):
         return self.state.game_reward()
@@ -20,4 +21,3 @@ class GameStateLogic:
         next_state = deepcopy(self.state)
         next_state.apply_action(action)
         next_state.move_turn()
-

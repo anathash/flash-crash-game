@@ -30,6 +30,9 @@ class Player:
     def apply_order(self, order: Action):
         raise NotImplementedError
 
+    def game_reward(self, funds: Dict[str, Fund]):
+        raise NotImplementedError
+
 """    def get_valid_actions(self, assets: Dict[str, Asset] = None):
         actions = []
         orders_lists = self.gen_orders(assets)
@@ -67,6 +70,13 @@ class Attacker(Player):
             del self.portfolio[order.asset_symbol]
         else:
             self.portfolio[order.asset_symbol] = num_shares
+
+    def game_reward(self, funds: List[Fund]):
+        reward = 0
+        for fund in self.goals:
+            if funds[fund].is_liquidated():
+                reward += 1
+        return reward/len(self.goals)
 
     def gen_orders(self, assets: Dict[str, Asset]):
         orders_lists = []
@@ -126,10 +136,9 @@ class Defender(Player):
         num_shares += order.num_shares
         self.portfolio[order.asset_symbol] = num_shares
 
-    @staticmethod
-    def game_reward(funds: List[Fund]):
+    def game_reward(self, funds: Dict[str, Fund]):
         reward = 0
-        for fund in funds:
+        for fund in funds.values():
             if fund.is_liquidated():
                 reward -= 1
         return reward

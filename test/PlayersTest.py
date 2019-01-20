@@ -120,9 +120,10 @@ class DefenderTest  (unittest.TestCase):
         self.assertFalse(defender.resources_exhusted())
 
     def test_game_reward(self):
+        defender = Defender(200, 0.5, 2)
         f1 = Fund('f1', {}, 200, 2, 2, )
         f2 = Fund('f2', {'a1': 200}, 200, 2, 2, )
-        self.assertEqual(Defender.game_reward([f1, f2]), -1)
+        self.assertEqual(defender.game_reward({'f1': f1, 'f2': f2}), -1)
 
     def test_gen_orders(self):
         defender = Defender(400, 0.5, 2)
