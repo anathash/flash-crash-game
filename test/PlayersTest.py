@@ -1,4 +1,5 @@
 import unittest
+from typing import Dict
 
 from numpy import sort
 
@@ -18,35 +19,27 @@ def to_string_list(orders):
 class AttackerTest  (unittest.TestCase):
 
     def test_resources_exhusted_false_when_portfolio_not_empty(self):
-        attacker = Attacker({'a1': 300, 'a2': 400}, ['f1'], 0.25, 2)
+        attacker = Attacker({'a1': 300, 'a2': 400}, ['f1'], 4, 2)
         self.assertFalse(attacker.resources_exhusted())
 
     def test_resources_exhusted_false_when_portfolio_empty(self):
-        attacker = Attacker({}, ['f1'], 0.25, 2)
+        attacker = Attacker({}, ['f1'], 4, 2)
         self.assertTrue(attacker.resources_exhusted())
 
     def test_goal_achieved(self):
-        attacker = Attacker({'a1': 300, 'a2': 400}, ['f1'], 0.25, 2)
+        attacker = Attacker({'a1': 300, 'a2': 400}, ['f1'], 4, 2)
         f1 = Fund('f1', {}, 200, 2, 2, )
         f2 = Fund('f2', {'a1': 200}, 200, 2, 2, )
         self.assertTrue(attacker.is_goal_achieved({'f1': f1, 'f2': f2}))
 
     def test_goal_not_achieved(self):
-        attacker = Attacker({'a1': 300, 'a2': 400}, ['f1', 'f2'], 0.25, 2)
+        attacker = Attacker({'a1': 300, 'a2': 400}, ['f1', 'f2'], 4, 2)
         f1 = Fund('f1', {}, 200, 2, 2, )
         f2 = Fund('f2', {'a1': 200}, 200, 2, 2, )
         self.assertFalse(attacker.is_goal_achieved({'f1': f1, 'f2': f2}))
 
-    def test_gen_orders(self):
-        attacker = Attacker({'a1': 300, 'a2': 400}, ['f1', 'f2'], 0.5, 2)
-        expected_orders = [[Sell('a1', 150, 2), Sell('a1', 300, 2)],
-                           [Sell('a2', 200, 2), Sell('a2', 400, 2)]]
-        actual_orders = attacker.gen_orders({'a1': Asset(2, 200, 'a1'), 'a2': Asset(2, 300, 'a2')})
-        for i in range(2):
-            self.assertListEqual(expected_orders[i], actual_orders[i])
-
     def test_apply_action(self):
-        attacker = Attacker({'a1': 300, 'a2': 400}, ['f1', 'f2'], 0.5, 2)
+        attacker = Attacker({'a1': 300, 'a2': 400}, ['f1', 'f2'], 2, 2)
         orders = [Sell('a1', 150, 2), Sell('a2', 200, 2)]
         attacker.apply_action(Action(orders))
         self.assertEqual(attacker.portfolio['a1'], 150)
@@ -55,13 +48,13 @@ class AttackerTest  (unittest.TestCase):
         self.assertEqual(len(attacker.portfolio.items()), 2)
 
     def test_apply_illegal_action(self):
-        attacker = Attacker({'a1': 300, 'a2': 400}, ['f1', 'f2'], 0.5, 2)
+        attacker = Attacker({'a1': 300, 'a2': 400}, ['f1', 'f2'], 2, 2)
         orders = [Buy('a1', 100, 2), Sell('a2', 100, 2)]
         with self.assertRaises(ValueError):
             attacker.apply_action(Action(orders))
 
     def test_get_valid_actions(self):
-        attacker = Attacker({'a1': 300, 'a2': 400}, ['f1', 'f2'], 0.5, 2)
+        attacker = Attacker({'a1': 300, 'a2': 400}, ['f1', 'f2'], 2, 2)
         expected_orders = \
             [[Sell('a1', 150, 2)], [Sell('a1', 300, 2)],
              [Sell('a2', 200, 2)], [Sell('a2', 400, 2)],
@@ -75,7 +68,7 @@ class AttackerTest  (unittest.TestCase):
         self.assertListEqual(e, a)
 
     def test_get_valid_actions_max_assets(self):
-        attacker = Attacker({'a1': 300, 'a2': 400}, ['f1', 'f2'], 0.5, 1)
+        attacker = Attacker({'a1': 300, 'a2': 400}, ['f1', 'f2'], 2, 1)
         expected_orders = \
             [[Sell('a1', 150, 2)], [Sell('a1', 300, 2)],
              [Sell('a2', 200, 2)], [Sell('a2', 400, 2)]]
@@ -85,7 +78,7 @@ class AttackerTest  (unittest.TestCase):
         self.assertListEqual(e, a)
 
     def test_get_valid_actions2(self):
-        attacker = Attacker({'a1': 300, 'a2': 400, 'a3': 100}, ['f1', 'f2'], 0.5, 2)
+        attacker = Attacker({'a1': 300, 'a2': 400, 'a3': 100}, ['f1', 'f2'], 2, 2)
         expected_orders = \
             [[Sell('a1', 150, 2)], [Sell('a1', 300, 2)],
              [Sell('a2', 200, 2)], [Sell('a2', 400, 2)],
@@ -108,32 +101,50 @@ class AttackerTest  (unittest.TestCase):
         a = to_string_list(actual_orders)
         self.assertListEqual(e, a)
 
+    def test_gen_random_action(self):
+        assets = {'a1': Asset(2, 500, 'a1'), 'a2': Asset(2, 500, 'a2'), 'a3': Asset(2, 500, 'a3')}
+        attacker = Attacker({'a1': 300, 'a2': 400, 'a3': 100}, ['f1', 'f2'], 2, 2)
+        for i in range(0, 100):
+            action = attacker.gen_random_action(assets)
+            for order in action.orders:
+                self.assert_valid_order(attacker, order, assets)
+
+    def assert_valid_order(self, attacker: Attacker, sell: Sell, assets: Dict[str, Asset]):
+        asset = assets[sell.asset_symbol]
+        self.assertEqual(sell.share_price, asset.price)
+        self.assertTrue(sell.num_shares <= attacker.portfolio[sell.asset_symbol])
+
+"""
+   def test_gen_orders(self):
+        attacker = Attacker({'a1': 300, 'a2': 400}, ['f1', 'f2'], 0.5, 2)
+        expected_orders = [[Sell('a1', 150, 2), Sell('a1', 300, 2)],
+                           [Sell('a2', 200, 2), Sell('a2', 400, 2)]]
+        actual_orders = attacker.gen_orders({'a1': Asset(2, 200, 'a1'), 'a2': Asset(2, 300, 'a2')})
+        for i in range(2):
+            self.assertListEqual(expected_orders[i], actual_orders[i])
+
+
+"""
+
 
 class DefenderTest  (unittest.TestCase):
 
     def test_resources_exhusted_false_when_capital_exists(self):
-        defender = Defender(200, 0.5, 2)
+        defender = Defender(200, 2, 2)
         self.assertFalse(defender.resources_exhusted())
 
     def test_resources_exhusted_false_when_portfolio_empty(self):
-        defender = Defender(200, 0.5, 2)
+        defender = Defender(200, 2, 2)
         self.assertFalse(defender.resources_exhusted())
 
     def test_game_reward(self):
-        defender = Defender(200, 0.5, 2)
+        defender = Defender(200, 2, 2)
         f1 = Fund('f1', {}, 200, 2, 2, )
         f2 = Fund('f2', {'a1': 200}, 200, 2, 2, )
         self.assertEqual(defender.game_reward({'f1': f1, 'f2': f2}), -1)
 
-    def test_gen_orders(self):
-        defender = Defender(400, 0.5, 2)
-        expected_orders = [[Buy('a1', 100, 2), Buy('a1', 200, 2)], [Buy('a2', 150, 2)]]
-        actual_orders = defender.gen_orders({'a1': Asset(2, 200, 'a1'), 'a2': Asset(2, 300, 'a2')})
-        for i in range(2):
-            self.assertListEqual(expected_orders[i], actual_orders[i])
-
     def test_apply_action(self):
-        defender = Defender(400, 0.5, 2)
+        defender = Defender(400, 2, 2)
         orders = [Buy('a1', 100, 2), Buy('a2', 100, 2)]
         defender.apply_action(Action(orders))
         self.assertEqual(defender.portfolio['a1'], 100)
@@ -148,7 +159,7 @@ class DefenderTest  (unittest.TestCase):
             defender.apply_action(Action(orders))
 
     def test_get_valid_actions(self):
-        defender = Defender(500, 0.5, 2)
+        defender = Defender(500, 2, 2)
         expected_orders = \
             [[Buy('a1', 100, 2)], [Buy('a1', 200, 2)], [Buy('a2', 150, 2)], [Buy('a1', 100, 2), Buy('a2', 150, 2)]]
         e = to_string_list(expected_orders)
@@ -157,7 +168,7 @@ class DefenderTest  (unittest.TestCase):
         self.assertListEqual(e, a)
 
     def test_get_valid_actions_max_assets(self):
-        defender = Defender(500, 0.5, 1)
+        defender = Defender(500, 2, 1)
         expected_orders = \
             [[Buy('a1', 100, 2)], [Buy('a1', 200, 2)], [Buy('a2', 150, 2)]]
         e = to_string_list(expected_orders)
@@ -166,7 +177,7 @@ class DefenderTest  (unittest.TestCase):
         self.assertListEqual(e, a)
 
     def test_get_valid_actions2(self):
-        defender = Defender(500, 0.5, 2)
+        defender = Defender(500, 2, 2)
         expected_orders = \
             [[Buy('a1', 100, 2)], [Buy('a1', 200, 2)], [Buy('a2', 150, 2)],
              [Buy('a3', 50, 2)], [Buy('a3', 100, 2)],
@@ -183,6 +194,33 @@ class DefenderTest  (unittest.TestCase):
         a = to_string_list(actual_orders)
         self.assertListEqual(e, a)
 
+    def test_gen_random_action(self):
+        assets = {'a1': Asset(2, 500, 'a1'), 'a2': Asset(2, 500, 'a2'), 'a3': Asset(2, 500, 'a3')}
+        defender = Defender(500, 2, 1)
+        for i in range(100):
+            action = defender.gen_random_action(assets)
+            required_capital = 0
+            for order in action.orders:
+                self.assert_valid_order(defender, order, assets)
+                required_capital += order.num_shares * order.share_price
+            self.assertTrue(required_capital <= defender.capital)
 
+    def assert_valid_order(self, defender: Defender, buy: Buy, assets: Dict[str, Asset]):
+        asset = assets[buy.asset_symbol]
+        self.assertEqual(buy.share_price, asset.price)
+        self.assertTrue(buy.num_shares <= asset.total_shares)
+        self.assertTrue(buy.num_shares*buy.share_price <= defender.capital)
+
+
+"""
+   def test_gen_orders(self):
+        defender = Defender(400, 2, 2)
+        expected_orders = [[Buy('a1', 100, 2), Buy('a1', 200, 2)], [Buy('a2', 150, 2)]]
+        actual_orders = defender.gen_orders({'a1': Asset(2, 200, 'a1'), 'a2': Asset(2, 300, 'a2')})
+        for i in range(2):
+            self.assertListEqual(expected_orders[i], actual_orders[i])
+"""
 if __name__ == '__main__':
     unittest.main()
+
+

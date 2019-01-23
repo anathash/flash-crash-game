@@ -4,7 +4,7 @@ from GameState import GameState
 
 
 class Game:
-    def __init__(self, init_state:GameState, input_file, defender_initial_capital, attacker_initial_portfolio, attacker_goals):
+    def __init__(self, init_state: GameState, input_file, defender_initial_capital, attacker_initial_portfolio, attacker_goals):
         self.state = init_state
         #self.state = GameState(input_file, defender_initial_capital, attacker_initial_portfolio, attacker_goals)
 

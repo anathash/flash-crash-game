@@ -6,8 +6,16 @@ from Players import Defender, Attacker
 
 
 class GameState:
-    def __init__(self, input_file):
-        self.network = AssetFundsNetwork(input_file)
+    def __init__(self, network, players):
+        self.players = players
+        self.network = network
+        self.turn = 0
+
+    def current_player(self):
+        return self.players[self.turn]
+
+    def move_turn(self):
+        self.turn = (self.turn + 1) % len(self.players)
 
     def game_reward(self):
         raise NotImplementedError
@@ -23,12 +31,10 @@ class GameState:
 
 
 class TwoPlayersGameState(GameState):
-    def __init__(self, input_file, defender_initial_capital, attacker_initial_portfolio, attacker_goals):
-        super().__init__(input_file)
+    def __init__(self, network, defender_initial_capital, attacker_initial_portfolio, attacker_goals):
         self.attacker = Attacker(attacker_initial_portfolio, attacker_goals)
         self.defender = Defender(defender_initial_capital)
-        self.turn = 0
-        self.players = [self.attacker, self.defender]
+        super().__init__(network, [self.attacker, self.defender])
 
     def game_reward(self):
         return self.defender.game_reward(self.network.funds)
@@ -44,9 +50,6 @@ class TwoPlayersGameState(GameState):
         self.players[self.turn].apply_action(action, self.network.assets)
         self.network.apply_action(action)
         self.move_turn()
-
-    def move_turn(self):
-        self.turn = (self.turn + 1) % len(self.players)
 
 
 class SinglePlayerGameState(GameState):
