@@ -1,7 +1,7 @@
 import unittest
 import numpy.testing as npt
 
-from Actions import Buy, Sell
+from Orders import Buy, Sell
 from MarketImpactCalculator import ExponentialMarketImpactCalculator
 
 

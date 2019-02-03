@@ -3,7 +3,8 @@ from typing import Dict
 
 from numpy import sort
 
-from Actions import Sell, Buy, Action
+from Config import Config
+from Orders import Sell, Buy, Move
 from AssetFundNetwork import Fund, Asset
 from Players import Attacker, Defender
 
@@ -17,6 +18,10 @@ def to_string_list(orders):
 
 
 class AttackerTest  (unittest.TestCase):
+
+    @classmethod
+    def setUpClass(cls):
+        Config.set("MIN_ORDER_VALUE", 0.5)
 
     def test_resources_exhusted_false_when_portfolio_not_empty(self):
         attacker = Attacker({'a1': 300, 'a2': 400}, ['f1'], 4, 2)
@@ -41,7 +46,7 @@ class AttackerTest  (unittest.TestCase):
     def test_apply_action(self):
         attacker = Attacker({'a1': 300, 'a2': 400}, ['f1', 'f2'], 2, 2)
         orders = [Sell('a1', 150, 2), Sell('a2', 200, 2)]
-        attacker.apply_action(Action(orders))
+        attacker.apply_action(orders)
         self.assertEqual(attacker.portfolio['a1'], 150)
         self.assertEqual(attacker.portfolio['a2'], 200)
         self.assertEqual(attacker.capital, 700)
@@ -51,7 +56,16 @@ class AttackerTest  (unittest.TestCase):
         attacker = Attacker({'a1': 300, 'a2': 400}, ['f1', 'f2'], 2, 2)
         orders = [Buy('a1', 100, 2), Sell('a2', 100, 2)]
         with self.assertRaises(ValueError):
-            attacker.apply_action(Action(orders))
+            attacker.apply_action(orders)
+
+    def test_no_actions_below_min(self):
+        Config.set(Config.MIN_ORDER_VALUE, 500)
+        attacker = Attacker({'a1': 300}, ['f1', 'f2'], 2, 2)
+        expected_orders = [[Sell('a1', 300, 2)]]
+        e = to_string_list(expected_orders)
+        actual_orders = attacker.get_valid_actions({'a1': Asset(2, 200, 'a1')})
+        a = to_string_list(actual_orders)
+        self.assertListEqual(e, a)
 
     def test_get_valid_actions(self):
         attacker = Attacker({'a1': 300, 'a2': 400}, ['f1', 'f2'], 2, 2)
@@ -105,8 +119,8 @@ class AttackerTest  (unittest.TestCase):
         assets = {'a1': Asset(2, 500, 'a1'), 'a2': Asset(2, 500, 'a2'), 'a3': Asset(2, 500, 'a3')}
         attacker = Attacker({'a1': 300, 'a2': 400, 'a3': 100}, ['f1', 'f2'], 2, 2)
         for i in range(0, 100):
-            action = attacker.gen_random_action(assets)
-            for order in action.orders:
+            orders = attacker.gen_random_action(assets)
+            for order in orders:
                 self.assert_valid_order(attacker, order, assets)
 
     def assert_valid_order(self, attacker: Attacker, sell: Sell, assets: Dict[str, Asset]):
@@ -129,13 +143,33 @@ class AttackerTest  (unittest.TestCase):
 
 class DefenderTest  (unittest.TestCase):
 
+    @classmethod
+    def setUpClass(cls):
+        Config.set(Config.MIN_ORDER_VALUE, 0.5)
+
+    def test_no_actions_below_min(self):
+        Config.set(Config.MIN_ORDER_VALUE, 100)
+        defender = Defender(200, 2, 2)
+        actual_orders = defender.get_valid_actions({'a1': Asset(2, 60, 'a1')})
+        expected_orders = [[Buy('a1', 60, 2)]]
+        e = to_string_list(expected_orders)
+        a = to_string_list(actual_orders)
+        self.assertListEqual(e, a)
+
+
     def test_resources_exhusted_false_when_capital_exists(self):
         defender = Defender(200, 2, 2)
         self.assertFalse(defender.resources_exhusted())
 
-    def test_resources_exhusted_false_when_portfolio_empty(self):
-        defender = Defender(200, 2, 2)
-        self.assertFalse(defender.resources_exhusted())
+    def test_resources_exhusted_true_when_no_capital(self):
+        defender = Defender(0, 2, 2)
+        self.assertTrue(defender.resources_exhusted())
+
+    def test_set_resources_exhusted_when_no_valid_actions(self):
+        defender = Defender(10, 2, 2)
+        orders = defender.get_valid_actions({'a1': Asset(600, 200, 'a1'), 'a2': Asset(600, 300, 'a2')})
+        self.assertFalse(orders)
+        self.assertTrue(defender.resources_exhusted())
 
     def test_game_reward(self):
         defender = Defender(200, 2, 2)
@@ -146,7 +180,7 @@ class DefenderTest  (unittest.TestCase):
     def test_apply_action(self):
         defender = Defender(400, 2, 2)
         orders = [Buy('a1', 100, 2), Buy('a2', 100, 2)]
-        defender.apply_action(Action(orders))
+        defender.apply_action(orders)
         self.assertEqual(defender.portfolio['a1'], 100)
         self.assertEqual(defender.portfolio['a2'], 100)
         self.assertEqual(defender.capital, 0)
@@ -156,7 +190,7 @@ class DefenderTest  (unittest.TestCase):
         defender = Defender(400, 0.5, 2)
         orders = [Buy('a1', 100, 2), Sell('a2', 100, 2)]
         with self.assertRaises(ValueError):
-            defender.apply_action(Action(orders))
+            defender.apply_action(orders)
 
     def test_get_valid_actions(self):
         defender = Defender(500, 2, 2)
@@ -198,9 +232,9 @@ class DefenderTest  (unittest.TestCase):
         assets = {'a1': Asset(2, 500, 'a1'), 'a2': Asset(2, 500, 'a2'), 'a3': Asset(2, 500, 'a3')}
         defender = Defender(500, 2, 1)
         for i in range(100):
-            action = defender.gen_random_action(assets)
+            orders = defender.gen_random_action(assets)
             required_capital = 0
-            for order in action.orders:
+            for order in orders:
                 self.assert_valid_order(defender, order, assets)
                 required_capital += order.num_shares * order.share_price
             self.assertTrue(required_capital <= defender.capital)

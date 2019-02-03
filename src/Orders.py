@@ -32,6 +32,9 @@ class Sell(Order):
                + ' at ' + str(self.share_price)
 
 
-class Action:
+Move = List[Order]
+
+"""class Action:
     def __init__(self, orders: List[Order]):
         self.orders = orders
+"""

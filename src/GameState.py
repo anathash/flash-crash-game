@@ -1,12 +1,12 @@
 from copy import deepcopy
 
-from Actions import Action
+from Orders import Move
 from AssetFundNetwork import AssetFundsNetwork
 from Players import Defender, Attacker
 
 
 class GameState:
-    def __init__(self, network, players):
+    def __init__(self, network: AssetFundsNetwork, players):
         self.players = players
         self.network = network
         self.turn = 0
@@ -26,28 +26,55 @@ class GameState:
     def get_valid_actions(self):
         raise NotImplementedError
 
-    def apply_action(self, action: Action):
+    def apply_action(self, action: Move):
         raise NotImplementedError
+
+    def gen_random_action(self):
+        raise NotImplementedError
+
+    def print_winner(self):
+        if self.attacker.is_goal_achieved(self.network.funds):
+            print('Attacker Won!')
+            return
+        if self.attacker.resources_exhusted():
+            print('Defender Won!')
+            return
+        print('No One Won!')
+
+    def GetResult(self, playerjm):
+        return playerjm.game_reward(self.network.funds)
+
+    def __repr__(self):
+        ret = 'Players: /n'
+        for player in self.players:
+            ret += str(player) + '/n'
+        ret = 'Network: /n'
+        ret += str(self.network) + '/n'
+        return ret
 
 
 class TwoPlayersGameState(GameState):
-    def __init__(self, network, defender_initial_capital, attacker_initial_portfolio, attacker_goals):
-        self.attacker = Attacker(attacker_initial_portfolio, attacker_goals)
-        self.defender = Defender(defender_initial_capital)
+    def __init__(self, network, defender_initial_capital, attacker_initial_portfolio, attacker_goals,
+                 attacker_asset_slicing, defender__asset_slicing, max_assets_in_action):
+        self.attacker = Attacker(attacker_initial_portfolio, attacker_goals, attacker_asset_slicing,
+                                 max_assets_in_action)
+        self.defender = Defender(defender_initial_capital, defender__asset_slicing, max_assets_in_action)
         super().__init__(network, [self.attacker, self.defender])
 
     def game_reward(self):
         return self.defender.game_reward(self.network.funds)
 
     def game_ended(self):
-        return self.attacker.is_goal_achieved(self.network.funds) or \
-               self.defender.resources_exhusted() or self.attacker.resources_exhusted()
+        return self.attacker.is_goal_achieved(self.network.funds) or self.attacker.resources_exhusted()
 
     def get_valid_actions(self):
         return self.players[self.turn].get_valid_actions(self.network.assets)
 
-    def apply_action(self, action: Action):
-        self.players[self.turn].apply_action(action, self.network.assets)
+    def gen_random_action(self):
+        return self.players[self.turn].gen_random_action(self.network.assets)
+
+    def apply_action(self, action: Move):
+        self.players[self.turn].apply_action(action)
         self.network.apply_action(action)
         self.move_turn()
 
@@ -66,6 +93,9 @@ class SinglePlayerGameState(GameState):
     def get_valid_actions(self):
         return self.attacker.get_valid_actions(self.network.assets)
 
-    def apply_action(self, action: Action):
+    def gen_random_action(self):
+        return self.attacker.gen_random_action(self.network.assets)
+
+    def apply_action(self, action: Move):
         self.attacker.apply_action(action, self.network.assets)
         self.network.apply_action(action)

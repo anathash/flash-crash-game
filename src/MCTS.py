@@ -17,7 +17,7 @@ import Game
 # the UCTPlayGame() function at the bottom of the code.
 #
 # Written by Peter Cowling, Ed Powley, Daniel Whitehouse (University of York, UK) September 2012.
-#
+# http://mcts.ai/code/python.html
 # Licence is granted to freely use and distribute for any sensible/legal purpose so long as this comment
 # remains in any distributed code.
 #
@@ -27,7 +27,9 @@ from math import *
 import random
 
 import GameState
-from Actions import Action
+from Orders import Move
+from AssetFundNetwork import AssetFundsNetwork
+from MarketImpactCalculator import ExponentialMarketImpactCalculator
 
 
 class Node:
@@ -35,7 +37,7 @@ class Node:
         Crashes if state not specified.
     """
 
-    def __init__(self, move: Action  =None, parent =None, state: GameState=None, exploration_constant = 2):
+    def __init__(self, move: Move  =None, parent =None, state: GameState=None, exploration_constant = 2):
         self.move = move  # the move that got us to this node - "None" for the root node
         self.parentNode = parent  # "None" for the root node
         self.childNodes = []
@@ -110,12 +112,12 @@ def UCT(rootstate:GameState, itermax, verbose=False):
         # Expand
         if node.untriedMoves != []:  # if we can expand (i.e. state/node is non-terminal)
             m = random.choice(node.untriedMoves)
-            state.DoMove(m)
+            state.apply_action(m)
             node = node.AddChild(m, state)  # add child and descend tree
 
         # Rollout - this can often be made orders of magnitude quicker using a state.GetRandomMove() function
-        while state.GetMoves() != []:  # while state is non-terminal
-            state.DoMove(random.choice(state.GetMoves()))
+        while state.get_valid_actions() != []:  # while state is non-terminal
+            state.apply_action(state.gen_random_action())
 
         # Backpropagate
         while node != None:  # backpropagate from the expanded node and work back to the root node
@@ -129,6 +131,8 @@ def UCT(rootstate:GameState, itermax, verbose=False):
     else:
         print(rootnode.ChildrenToString())
 
+    if not rootnode.childNodes:
+       return rootnode.childNodes
     return sorted(rootnode.childNodes, key=lambda c: c.visits)[-1].move  # return the move that was most visited
 
 
@@ -138,29 +142,51 @@ def UCTPlayGame():
     """
     # state = OthelloState(4) # uncomment to play Othello on a square board of the given size
     # state = OXOState() # uncomment to play OXO
-    state = NimState(15)  # uncomment to play Nim with the given number of starting chips
-    while (state.GetMoves() != []):
-        print
-        str(state)
-        if state.playerJustMoved == 1:
-            m = UCT(rootstate=state, itermax=1000, verbose=False)  # play with values for itermax and verbose = True
+    num_funds = 3
+    num_assets = 3
+
+    assets_num_shares = [10000]*num_assets
+    initial_prices = [100]*num_assets
+
+    initial_capitals = [10000000]*num_funds
+    initial_leverages = [2]*num_funds
+    tolerances = [1.2]*num_funds
+
+    g = AssetFundsNetwork.generate_random_network(0.5, num_funds, num_assets, initial_capitals,
+                                                  initial_leverages, initial_prices,
+                                                  tolerances, assets_num_shares, ExponentialMarketImpactCalculator(1))
+    goals = []
+    attacker_portfolio = {}
+    #num_goals = random.randint(1, num_funds/2)
+    #goals_index = random.sample(range(0, num_funds), num_goals)
+    goals_index = [0]
+    for i in range(len(goals_index)):
+        goal_fund_sym = 'f' + str(i)
+        goals.append(goal_fund_sym)
+        goal_fund = g.funds[goal_fund_sym]
+        for asset in goal_fund.portfolio:
+            attacker_portfolio[asset] = g.assets[asset].total_shares*0.2
+
+    state = GameState.TwoPlayersGameState(g, 100000, attacker_portfolio, goals, 10, 10, 1)  # uncomment to play Nim with the given number of starting chips
+    while (not state.game_ended()):
+        print(str(state))
+        if state.turn == 1:
+            if state.players[state.turn].resources_exhusted(): #insert bayesian here
+                state.move_turn()
+                continue
+            else:
+                m = UCT(rootstate=state, itermax=100, verbose=False) #changed from 1000 for debugginf # play with values for itermax and verbose = True
         else:
-            m = UCT(rootstate=state, itermax=100, verbose=False)
-        print
-        "Best Move: " + str(m) + "\n"
-        state.DoMove(m)
-    if state.GetResult(state.playerJustMoved) == 1.0:
-        print
-        "Player " + str(state.playerJustMoved) + " wins!"
-    elif state.GetResult(state.playerJustMoved) == 0.0:
-        print
-        "Player " + str(3 - state.playerJustMoved) + " wins!"
-    else:
-        print
-    "Nobody wins!"
+            m = UCT(rootstate=state, itermax=100, verbose=False) #Attacker
+        print("Best Move: " + str(m) + "\n")
+        state.apply_action(m)
+    if state.game_ended():
+        state.print_winner()
+
 
 
 if __name__ == "__main__":
     """ Play a single game to the end using UCT for both players. 
     """
     UCTPlayGame()
+    exit(0)

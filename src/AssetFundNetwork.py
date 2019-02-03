@@ -5,11 +5,11 @@ import networkx as nx
 import numpy
 
 
-from typing import Dict
+from typing import Dict, List
 import jsonpickle
 
 import MarketImpactCalculator
-from Actions import Order, Action, Sell
+from Orders import Order, Move, Sell
 
 'TODO: do we need the total market cap of assets or do funds hold the entire market'
 
@@ -81,6 +81,10 @@ class AssetFundsNetwork:
         return isinstance(other, AssetFundsNetwork) and isinstance(other.mi_calc, type(self.mi_calc)) and \
                self.funds == other.funds and self.assets == other.assets
 
+    def __repr__(self):
+        return str(self.funds)
+
+
     @classmethod
     def generate_random_network(cls, density, num_funds, num_assets, initial_capitals, initial_leverages,
                                 assets_initial_prices, tolerances, assets_num_shares, mi_calc: MarketImpactCalculator):
@@ -145,9 +149,9 @@ class AssetFundsNetwork:
         with open(filename, 'w') as fp:
             json.dump(class_dict, fp)
 
-    def apply_action(self, action: Action):
+    def apply_action(self, orders: List[Order]):
         liquidation_orders = []
-        for order in action.orders:
+        for order in orders:
             asset = self.assets[order.asset_symbol]
             new_price = asset.price * self.mi_calc.get_market_impact(order, asset.total_shares)
             asset.set_price(new_price)
@@ -157,7 +161,7 @@ class AssetFundsNetwork:
                     liquidation_orders.extend(fund.gen_liquidation_orders())
                     fund.liquidate()
         if liquidation_orders:
-            self.apply_action(Action(liquidation_orders))
+            self.apply_action(liquidation_orders)
 
 
 """

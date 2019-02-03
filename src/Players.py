@@ -1,8 +1,10 @@
 import itertools
 import random
+from math import floor
 from typing import List, Dict
 
-from Actions import Sell, Action, Order, Buy
+from Config import Config
+from Orders import Sell, Move, Order, Buy
 from AssetFundNetwork import Asset, Fund
 
 
@@ -14,8 +16,8 @@ class Player:
         self.max_assets_in_action = max_assets_in_action
         self.asset_slicing = asset_slicing
 
-    def apply_action(self, action: Action):
-        for order in action.orders:
+    def apply_action(self, orders: Move):
+        for order in orders:
             self.apply_order(order)
 
     def get_valid_actions(self, assets: Dict[str, Asset]):
@@ -30,7 +32,7 @@ class Player:
     def resources_exhusted(self):
         raise NotImplementedError()
 
-    def apply_order(self, order: Action):
+    def apply_order(self, order: Move):
         raise NotImplementedError
 
     def game_reward(self, funds: Dict[str, Fund]):
@@ -50,9 +52,12 @@ class Attacker(Player):
     def __init__(self, initial_portfolio: Dict[str, int], goals: List[str], asset_slicing, max_assets_in_action):
         super().__init__(0, initial_portfolio, asset_slicing, max_assets_in_action)
         self.goals = goals
+        self.resources_exhusted_flag = False
 
     def resources_exhusted(self):
-        return not self.portfolio
+        if not self.portfolio:
+            self.resources_exhusted_flag = True
+        return self.resources_exhusted_flag
 
     def is_goal_achieved(self, funds: Dict[str, Fund]):
         for fund_symbol in self.goals:
@@ -79,7 +84,11 @@ class Attacker(Player):
         return 1
 
     def get_valid_actions(self, assets: Dict[str, Asset]):
-        return self.gen_orders_rec(list(assets.values()))
+        assets = [assets[x] for x in self.portfolio.keys()]
+        orders = self.gen_orders_rec(assets)
+        if not orders:
+            self.resources_exhusted_flag = True
+        return orders
 
     def gen_orders_rec(self, assets: List[Asset]):
         if not assets:
@@ -90,6 +99,8 @@ class Attacker(Player):
         orders_list.extend(orders_to_add)
         for i in range(1, self.asset_slicing + 1):
             shares_to_sell = int(i * self.portfolio[asset.symbol] / self.asset_slicing)
+            if asset.price * shares_to_sell < Config.get(Config.MIN_ORDER_VALUE): #ignore small orders
+                continue
             order = Sell(asset.symbol, shares_to_sell, asset.price)
             orders_list.append([order])
             for orders in orders_to_add:
@@ -121,16 +132,17 @@ class Attacker(Player):
 
     def gen_random_action(self, assets: Dict[str, Asset] = None):
         orders = []
-        num_assets = random.randint(1, self.max_assets_in_action)
-        chosen_assets = random.sample(list(assets.values()), num_assets)
-        for i in range(num_assets):
-            asset = chosen_assets[i]
+        portfolio_assets = list(self.portfolio.keys())
+        num_assets = min(len(assets), random.randint(1, self.max_assets_in_action))
+        chosen_assets = random.sample(portfolio_assets, num_assets)
+        for sym in chosen_assets:
+            asset = assets[sym]
             portion = random.randint(1, self.asset_slicing)
             shares_to_sell = int(portion * self.portfolio[asset.symbol] / self.asset_slicing)
             order = Sell(asset.symbol, shares_to_sell, asset.price)
             orders.append(order)
 
-        return Action(orders)
+        return orders
 
     def __str__(self):
         return 'Attacker'
@@ -139,12 +151,15 @@ class Attacker(Player):
 class Defender(Player):
     def __init__(self, initial_capital, asset_slicing, max_assets_in_action):
         super().__init__(initial_capital, {}, asset_slicing, max_assets_in_action)
-        return
+        self.resources_exhusted_flag = False
 
     ' think: should we allow selling of assets when capital is zero?'
     def resources_exhusted(self):
         'allow overdraft?'
-        return self.capital <= 0
+        if self.capital <= 0:
+            self.resources_exhusted_flag = True
+
+        return self.resources_exhusted_flag
 
         'TODO: make sure we dont get to very small numbers'
 
@@ -173,6 +188,9 @@ class Defender(Player):
 
     def get_valid_actions(self, assets: Dict[str, Asset] = None):
         orders_list = self.gen_orders_rec(list(assets.values()))
+        if not orders_list:
+            self.resources_exhusted_flag = True
+            return []
         return [x[0] for x in orders_list]
 
     def gen_random_action(self, assets: Dict[str, Asset] = None):
@@ -186,13 +204,14 @@ class Defender(Player):
                 asset = chosen_assets[i]
                 portion = random.randint(1, self.asset_slicing)
                 order_required_capital = portion * asset.price * asset.total_shares/ self.asset_slicing
-                if order_required_capital + action_required_capital <= self.capital:
-                    order = Buy(asset.symbol, portion*chosen_assets[i].total_shares/self.asset_slicing, asset.price)
-                    action_required_capital += order_required_capital
-                    orders.append(order)
+                if order_required_capital + action_required_capital > self.capital:
+                    portion = int(floor((self.capital * self.asset_slicing) / (asset.price * asset.total_shares)))
+                order = Buy(asset.symbol, portion*chosen_assets[i].total_shares/self.asset_slicing, asset.price)
+                action_required_capital += order_required_capital
+                orders.append(order)
                 i += 1
 
-        return Action(orders)
+        return orders
 
     def gen_orders_rec(self, assets: List[Asset]):
         if not assets:
@@ -206,6 +225,9 @@ class Defender(Player):
         capital_needed = capital_jump
         while buy_slice <= self.asset_slicing and capital_needed <= self.capital:
             shares_to_buy = int(asset.total_shares * buy_slice / self.asset_slicing)
+            if asset.price * shares_to_buy < Config.get(Config.MIN_ORDER_VALUE):  # ignore small orders
+                buy_slice += 1
+                continue
             order = Buy(asset.symbol, shares_to_buy, asset.price)
             orders_list.append(([order], capital_needed))
             for tup in orders_to_add:

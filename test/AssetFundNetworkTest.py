@@ -2,7 +2,7 @@ import unittest
 
 import networkx as nx
 
-from Actions import Sell, Action, Buy, Order
+from Orders import Sell, Move, Buy, Order
 from AssetFundNetwork import Asset, Fund, AssetFundsNetwork
 from MarketImpactCalculator import ExponentialMarketImpactCalculator, MarketImpactCalculator
 
@@ -149,7 +149,7 @@ class TestAssetFundsNetwork  (unittest.TestCase):
         f2 = Fund('f2', {'a0': 10, 'a1': 10}, 5, 2, 3)
         network = AssetFundsNetwork({'f0': f0, 'f1': f1,'f2': f2}, {'a0': a0, 'a1': a1},
                                     MockMarketImpactTestCalculator())
-        a = Action([Sell('a0', num_shares=20, share_price=2), Buy('a1', num_shares=10, share_price=2)])
+        a = [Sell('a0', num_shares=20, share_price=2), Buy('a1', num_shares=10, share_price=2)]
         network.apply_action(a)
 
         expected_a0 = Asset(price=1.0, total_shares=40, symbol='a0')
@@ -166,7 +166,7 @@ class TestAssetFundsNetwork  (unittest.TestCase):
         f1 = Fund('f1', {'a0': 10, 'a1': 1}, initial_capital=1, initial_leverage=1, tolerance=3)
         network = AssetFundsNetwork({'f0': f0, 'f1': f1}, {'a0': a0, 'a1': a1},
                                     MockMarketImpactTestCalculator())
-        a = Action([Sell('a0', num_shares=10, share_price=2), Buy('a1', num_shares=10, share_price=2)])
+        a = [Sell('a0', num_shares=10, share_price=2), Buy('a1', num_shares=10, share_price=2)]
         network.apply_action(a)
 
         expected_a0 = Asset(price=0.0625, total_shares=40, symbol='a0')
