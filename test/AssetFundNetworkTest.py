@@ -1,6 +1,7 @@
 import unittest
 
 import networkx as nx
+import numpy as np
 
 from Orders import Sell, Move, Buy, Order
 from AssetFundNetwork import Asset, Fund, AssetFundsNetwork
@@ -176,6 +177,19 @@ class TestAssetFundsNetwork  (unittest.TestCase):
                                              MockMarketImpactTestCalculator())
 
         self.assertEqual(network, expected_network)
+
+    def test_get_canonical_form(self):
+        a0 = Asset(price=1, total_shares=40, symbol='a0')
+        a1 = Asset(price=2, total_shares=40, symbol='a1')
+        f0 = Fund('f0', {'a0': 10}, initial_capital=2, initial_leverage=8, tolerance=2)
+        f1 = Fund('f1', {'a0': 10, 'a1': 10}, initial_capital=1, initial_leverage=1, tolerance=3)
+        network = AssetFundsNetwork({'f0': f0, 'f1': f1}, {'a0': a0, 'a1': a1},
+                                    MockMarketImpactTestCalculator())
+        expected_canonical_form = np.array([[10., 0.], [10., 20.]])
+        actual_canonical_form = network.get_canonical_form()
+        self.assertTrue(np.array_equal(expected_canonical_form, actual_canonical_form))
+
+
 
 if __name__ == '__main__':
     unittest.main()

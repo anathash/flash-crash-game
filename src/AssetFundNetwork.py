@@ -149,6 +149,19 @@ class AssetFundsNetwork:
         with open(filename, 'w') as fp:
             json.dump(class_dict, fp)
 
+    def get_canonical_form(self):
+        num_funds = len(self.funds)
+        num_assets = len(self.assets)
+        board = numpy.zeros([num_funds, num_assets])
+        for i in range(num_funds):
+            fund = self.funds['f' + str(i)]
+            for j in range(num_assets):
+                sym = 'a' + str(j)
+                if sym in fund.portfolio:
+                    board[i, j] = fund.portfolio[sym] * self.assets[sym].price
+        return board
+
+
     def apply_action(self, orders: List[Order]):
         liquidation_orders = []
         for order in orders:
