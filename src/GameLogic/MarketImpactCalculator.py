@@ -1,5 +1,5 @@
 from math import exp
-from Orders import Order, Sell
+from GameLogic.Orders import Order, Sell
 
 
 class MarketImpactCalculator:

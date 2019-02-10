@@ -1,0 +1,38 @@
+class Config:
+    MIN_ORDER_VALUE = "MIN_ORDER_VALUE"
+    DENSITY = "DENSITY"
+    INITIAL_NUM_SHARES = "INITIAL_NUM_SHARES"
+    INITIAL_ASSET_PRICE = "INITIAL_ASSET_PRICE"
+    INITIAL_FUND_CAPITAL = "INITIAL_FUND_CAPITAL"
+    INITIAL_LEVERAGE = "INITIAL_LEVERAGE"
+    TOLERANCE = "TOLERANCE"
+    ATTACKER_PORTFOLIO_RATIO = "ATTACKER_PORTFOLIO_RATIO"
+    NUM_FUNDS = "NUM_FUNDS"
+    NUM_ASSETS = "NUM_ASSETS"
+    MAX_ASSETS_IN_ACTION = "MAX_ASSETS_IN_ACTION"
+    ASSET_SLICING = "ASSET_SLICING"
+
+    __conf = {"MIN_ORDER_VALUE": 1000,
+              "DENSITY": 0.5,
+              "INITIAL_NUM_SHARES": 500,
+              "INITIAL_ASSET_PRICE": 1000,
+              "INITIAL_FUND_CAPITAL": 500000,
+              "INITIAL_LEVERAGE": 2,
+              "TOLERANCE": 1.01,
+              "ATTACKER_PORTFOLIO_RATIO": 0.2,
+              "MAX_ASSETS_IN_ACTION": 3,
+              "ASSET_SLICING": 10,
+              "NUM_FUNDS": 10,
+              "NUM_ASSETS": 10
+              }
+
+    @staticmethod
+    def get(name):
+        return Config.__conf[name]
+
+    @staticmethod
+    def set(name, value):
+        if name in Config.__conf.keys():
+            Config.__conf[name] = value
+        else:
+            raise NameError("Name not accepted in set() method")

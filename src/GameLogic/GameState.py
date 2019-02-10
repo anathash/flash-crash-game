@@ -1,8 +1,6 @@
-from copy import deepcopy
-
-from Orders import Move
-from AssetFundNetwork import AssetFundsNetwork
-from Players import Defender, Attacker
+from GameLogic.Orders import Move
+from GameLogic.AssetFundNetwork import AssetFundsNetwork
+from GameLogic.Players import Defender, Attacker
 
 
 class GameState:
@@ -80,9 +78,11 @@ class TwoPlayersGameState(GameState):
 
 
 class SinglePlayerGameState(GameState):
-    def __init__(self, input_file, attacker_initial_portfolio, attacker_goals):
-        super().__init__(input_file)
-        self.attacker = Attacker(attacker_initial_portfolio, attacker_goals)
+    def __init__(self, network, attacker_initial_portfolio, attacker_goals, attacker_asset_slicing,
+                 max_assets_in_action):
+        self.attacker = Attacker(attacker_initial_portfolio, attacker_goals, attacker_asset_slicing,
+                                 max_assets_in_action)
+        super().__init__(network, [self.attacker])
 
     def game_reward(self):
         return self.attacker.game_reward(self.network)
@@ -97,5 +97,5 @@ class SinglePlayerGameState(GameState):
         return self.attacker.gen_random_action(self.network.assets)
 
     def apply_action(self, action: Move):
-        self.attacker.apply_action(action, self.network.assets)
+        self.attacker.apply_action(action)
         self.network.apply_action(action)

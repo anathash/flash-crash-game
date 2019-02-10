@@ -1,6 +1,6 @@
 from copy import deepcopy
 
-from GameState import GameState
+from GameLogic.GameState import GameState
 
 
 class Game:

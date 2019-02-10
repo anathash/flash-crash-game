@@ -1,5 +1,6 @@
 #!/usr/bin/python
 import json
+from math import floor
 
 import networkx as nx
 import numpy
@@ -8,8 +9,8 @@ import numpy
 from typing import Dict, List
 import jsonpickle
 
-import MarketImpactCalculator
-from Orders import Order, Move, Sell
+from GameLogic import MarketImpactCalculator
+from GameLogic.Orders import Order, Sell
 
 'TODO: do we need the total market cap of assets or do funds hold the entire market'
 
@@ -129,7 +130,8 @@ class AssetFundsNetwork:
                 for j in range(len(investments)):
                     asset_index = investments[j][1] - num_funds
                     asset_symbol = 'a' + str(asset_index)
-                    portfolio[asset_symbol] = investment_proportions[fund_symbol][j] * fund_capital
+                    asset = assets[asset_symbol]
+                    portfolio[asset_symbol] = floor(investment_proportions[fund_symbol][j] * fund_capital/asset.price)
             funds[fund_symbol] = Fund(fund_symbol, portfolio, initial_capitals[i], initial_leverages[i], tolerances[i])
         return cls(funds, assets, mi_calc)
 

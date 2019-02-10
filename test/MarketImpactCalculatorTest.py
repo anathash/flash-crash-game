@@ -1,8 +1,8 @@
 import unittest
 import numpy.testing as npt
 
-from Orders import Buy, Sell
-from MarketImpactCalculator import ExponentialMarketImpactCalculator
+from GameLogic.Orders import Buy, Sell
+from GameLogic.MarketImpactCalculator import ExponentialMarketImpactCalculator
 
 
 class TestFlashCrashGameBoard  (unittest.TestCase):

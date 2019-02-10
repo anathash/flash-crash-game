@@ -3,10 +3,10 @@ from typing import Dict
 
 from numpy import sort
 
-from Config import Config
-from Orders import Sell, Buy, Move
-from AssetFundNetwork import Fund, Asset
-from Players import Attacker, Defender
+from GameLogic.Config import Config
+from GameLogic.Orders import Sell, Buy
+from GameLogic.AssetFundNetwork import Fund, Asset
+from GameLogic.Players import Attacker, Defender
 
 
 def to_string_list(orders):

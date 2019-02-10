@@ -3,9 +3,9 @@ import unittest
 import networkx as nx
 import numpy as np
 
-from Orders import Sell, Move, Buy, Order
-from AssetFundNetwork import Asset, Fund, AssetFundsNetwork
-from MarketImpactCalculator import ExponentialMarketImpactCalculator, MarketImpactCalculator
+from GameLogic.Orders import Sell, Buy, Order
+from GameLogic.AssetFundNetwork import Asset, Fund, AssetFundsNetwork
+from GameLogic.MarketImpactCalculator import ExponentialMarketImpactCalculator, MarketImpactCalculator
 
 
 class MockMarketImpactTestCalculator(MarketImpactCalculator):
@@ -135,11 +135,11 @@ class TestAssetFundsNetwork  (unittest.TestCase):
         prot0 = funds['f0'].portfolio
         self.assertEqual(len(prot0.items()), 2)
         self.assertEqual(prot0['a0'], 120)
-        self.assertEqual(prot0['a1'], 80)
+        self.assertEqual(prot0['a1'], 40)
 
         prot1 = funds['f1'].portfolio
         self.assertEqual(len(prot1.items()), 1)
-        self.assertEqual(prot1['a1'], 600)
+        self.assertEqual(prot1['a1'], 300)
         self.assertTrue('a0' not in prot1)
 
     def test_apply_action_no_liquidation(self):

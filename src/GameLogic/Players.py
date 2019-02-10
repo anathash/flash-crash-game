@@ -1,11 +1,10 @@
-import itertools
 import random
 from math import floor
 from typing import List, Dict
 
-from Config import Config
-from Orders import Sell, Move, Order, Buy
-from AssetFundNetwork import Asset, Fund
+from GameLogic.Config import Config
+from GameLogic.Orders import Sell, Move, Order, Buy
+from GameLogic.AssetFundNetwork import Asset, Fund
 
 
 class Player:
@@ -133,8 +132,9 @@ class Attacker(Player):
     def gen_random_action(self, assets: Dict[str, Asset] = None):
         orders = []
         portfolio_assets = list(self.portfolio.keys())
-        num_assets = min(len(assets), random.randint(1, self.max_assets_in_action))
+        num_assets = min(len(portfolio_assets), random.randint(1, self.max_assets_in_action))
         chosen_assets = random.sample(portfolio_assets, num_assets)
+
         for sym in chosen_assets:
             asset = assets[sym]
             portion = random.randint(1, self.asset_slicing)

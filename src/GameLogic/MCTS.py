@@ -1,11 +1,7 @@
 #from __future__ import division
 
-import time
 from copy import deepcopy
-from math import log, sqrt
-from random import choice
 
-import Game
 # This is a very simple implementation of the UCT Monte Carlo Tree Search algorithm in Python 2.7.
 # The function UCT(rootstate, itermax, verbose = False) is towards the bottom of the code.
 # It aims to have the clearest and simplest possible code, and for the sake of clarity, the code
@@ -26,10 +22,10 @@ import Game
 from math import *
 import random
 
-import GameState
-from Orders import Move
-from AssetFundNetwork import AssetFundsNetwork
-from MarketImpactCalculator import ExponentialMarketImpactCalculator
+from GameLogic import GameState
+from GameLogic.Orders import Move
+from GameLogic.AssetFundNetwork import AssetFundsNetwork
+from GameLogic.MarketImpactCalculator import ExponentialMarketImpactCalculator
 
 
 class Node:
@@ -37,7 +33,7 @@ class Node:
         Crashes if state not specified.
     """
 
-    def __init__(self, move: Move  =None, parent =None, state: GameState=None, exploration_constant = 2):
+    def __init__(self, move: Move  =None, parent =None, state: GameState =None, exploration_constant = 2):
         self.move = move  # the move that got us to this node - "None" for the root node
         self.parentNode = parent  # "None" for the root node
         self.childNodes = []
@@ -93,7 +89,7 @@ class Node:
         return s
 
 
-def UCT(rootstate:GameState, itermax, verbose=False):
+def UCT(rootstate: GameState, itermax, verbose=False):
     """ Conduct a UCT search for itermax iterations starting from rootstate.
         Return the best move from the rootstate.
         Assumes 2 alternating players (player 1 starts), with game results in the range [0.0, 1.0]."""
@@ -136,7 +132,7 @@ def UCT(rootstate:GameState, itermax, verbose=False):
     return sorted(rootnode.childNodes, key=lambda c: c.visits)[-1].move  # return the move that was most visited
 
 
-def UCTPlayGame():
+def UCTPlayTwoPlayersGame():
     """ Play a sample game between two UCT players where each player gets a different number
         of UCT iterations (= simulations = tree nodes).
     """
@@ -185,8 +181,50 @@ def UCTPlayGame():
 
 
 
+def UCTPlaySinglePlayersGame(state):
+    """ Play a sample game between two UCT players where each player gets a different number
+        of UCT iterations (= simulations = tree nodes).
+    """
+    # state = OthelloState(4) # uncomment to play Othello on a square board of the given size
+    # state = OXOState() # uncomment to play OXO
+    while (not state.game_ended()):
+        print(str(state))
+        m = UCT(rootstate=state, itermax=100, verbose=False)  # Attacker
+        print("Best Move: " + str(m) + "\n")
+        state.apply_action(m)
+    if state.game_ended():
+        state.print_winner()
+
+
 if __name__ == "__main__":
     """ Play a single game to the end using UCT for both players. 
     """
-    UCTPlayGame()
+    num_funds = 3
+    num_assets = 3
+
+    assets_num_shares = [10000] * num_assets
+    initial_prices = [100] * num_assets
+
+    initial_capitals = [10000000] * num_funds
+    initial_leverages = [2] * num_funds
+    tolerances = [1.2] * num_funds
+
+    g = AssetFundsNetwork.generate_random_network(0.5, num_funds, num_assets, initial_capitals,
+                                                  initial_leverages, initial_prices,
+                                                  tolerances, assets_num_shares, ExponentialMarketImpactCalculator(1))
+    goals = []
+    attacker_portfolio = {}
+    # num_goals = random.randint(1, num_funds/2)
+    # goals_index = random.sample(range(0, num_funds), num_goals)
+    goals_index = [0]
+    for i in range(len(goals_index)):
+        goal_fund_sym = 'f' + str(i)
+        goals.append(goal_fund_sym)
+        goal_fund = g.funds[goal_fund_sym]
+        for asset in goal_fund.portfolio:
+            attacker_portfolio[asset] = g.assets[asset].total_shares * 0.2
+
+    state = GameState.SinglePlayerGameState(g, 100000, attacker_portfolio, goals, 10, 10,
+                                            1)  # uncomment to play Nim with the given number of starting chips
+    UCTPlaySinglePlayersGame(state)
     exit(0)
