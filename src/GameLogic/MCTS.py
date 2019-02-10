@@ -26,6 +26,7 @@ from GameLogic import GameState
 from GameLogic.Orders import Move
 from GameLogic.AssetFundNetwork import AssetFundsNetwork
 from GameLogic.MarketImpactCalculator import ExponentialMarketImpactCalculator
+from GameLogic.Players import Attacker, RobustDefender, OracleDefender
 
 
 class Node:
@@ -138,15 +139,15 @@ def UCTPlayTwoPlayersGame():
     """
     # state = OthelloState(4) # uncomment to play Othello on a square board of the given size
     # state = OXOState() # uncomment to play OXO
-    num_funds = 3
-    num_assets = 3
+    num_funds = 10
+    num_assets = 10
 
     assets_num_shares = [10000]*num_assets
     initial_prices = [100]*num_assets
 
     initial_capitals = [10000000]*num_funds
     initial_leverages = [2]*num_funds
-    tolerances = [1.2]*num_funds
+    tolerances = [0.7]*num_funds
 
     g = AssetFundsNetwork.generate_random_network(0.5, num_funds, num_assets, initial_capitals,
                                                   initial_leverages, initial_prices,
@@ -155,15 +156,18 @@ def UCTPlayTwoPlayersGame():
     attacker_portfolio = {}
     #num_goals = random.randint(1, num_funds/2)
     #goals_index = random.sample(range(0, num_funds), num_goals)
-    goals_index = [0]
+    goals_index = [0, 1]
     for i in range(len(goals_index)):
         goal_fund_sym = 'f' + str(i)
         goals.append(goal_fund_sym)
         goal_fund = g.funds[goal_fund_sym]
         for asset in goal_fund.portfolio:
-            attacker_portfolio[asset] = g.assets[asset].total_shares*0.2
+            attacker_portfolio[asset] = g.assets[asset].total_shares*0.1
 
-    state = GameState.TwoPlayersGameState(g, 100000, attacker_portfolio, goals, 10, 10, 1)  # uncomment to play Nim with the given number of starting chips
+    attacker = Attacker(initial_portfolio=attacker_portfolio, goals=goals, asset_slicing=10, max_assets_in_action=1)
+    defender = OracleDefender(initial_capital=100000, asset_slicing=10, max_assets_in_action=2, goals=goals)
+
+    state = GameState.TwoPlayersGameState(g, attacker, defender)
     while (not state.game_ended()):
         print(str(state))
         if state.turn == 1:
@@ -199,8 +203,8 @@ def UCTPlaySinglePlayersGame(state):
 if __name__ == "__main__":
     """ Play a single game to the end using UCT for both players. 
     """
-    num_funds = 3
-    num_assets = 3
+    num_funds = 5
+    num_assets = 5
 
     assets_num_shares = [10000] * num_assets
     initial_prices = [100] * num_assets
@@ -224,7 +228,9 @@ if __name__ == "__main__":
         for asset in goal_fund.portfolio:
             attacker_portfolio[asset] = g.assets[asset].total_shares * 0.2
 
-    state = GameState.SinglePlayerGameState(g, 100000, attacker_portfolio, goals, 10, 10,
-                                            1)  # uncomment to play Nim with the given number of starting chips
-    UCTPlaySinglePlayersGame(state)
+    UCTPlayTwoPlayersGame()
+
+    #    state = GameState.SinglePlayerGameState(network=g, attacker_initial_portfolio=attacker_portfolio,
+#                                            attacker_goals=goals, attacker_asset_slicing=10, max_assets_in_action=2)
+#    UCTPlaySinglePlayersGame(state)
     exit(0)

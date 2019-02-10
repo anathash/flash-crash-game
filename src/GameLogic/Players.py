@@ -34,7 +34,7 @@ class Player:
     def apply_order(self, order: Move):
         raise NotImplementedError
 
-    def game_reward(self, funds: Dict[str, Fund]):
+    def game_reward(self, funds: Dict[str, Fund],  history=None):
         raise NotImplementedError
 """    def get_valid_actions(self, assets: Dict[str, Asset] = None):
         actions = []
@@ -76,7 +76,7 @@ class Attacker(Player):
         else:
             self.portfolio[order.asset_symbol] = num_shares
 
-    def game_reward(self, funds: List[Fund]):
+    def game_reward(self, funds: List[Fund], history=None):
         for fund in self.goals:
             if not funds[fund].is_liquidated():
                 return -1
@@ -171,12 +171,8 @@ class Defender(Player):
         num_shares += order.num_shares
         self.portfolio[order.asset_symbol] = num_shares
 
-    def game_reward(self, funds: Dict[str, Fund]):
-        reward = 0
-        for fund in funds.values():
-            if fund.is_liquidated():
-                reward -= 1
-        return reward
+    def game_reward(self, funds: Dict[str, Fund], history=None):
+        raise NotImplementedError
 
     def is_legal(self, orders: List[Order]):
         capital_needed = 0
@@ -271,6 +267,38 @@ class Defender(Player):
     def __str__(self):
         return 'Defender'
 
+
+class RobustDefender(Defender):
+    def game_reward(self, funds: Dict[str, Fund],  history=None):
+        reward = 0
+        for fund in funds.values():
+            if fund.is_liquidated():
+                reward -= 1
+        return reward
+
+
+class OracleDefender(Defender):
+    def __init__(self, initial_capital, asset_slicing, max_assets_in_action, goals):
+        super().__init__(initial_capital, asset_slicing, max_assets_in_action)
+        self.goals = goals
+
+    def game_reward(self, funds: Dict[str, Fund],  history=None):
+        for fund in self.goals:
+            if not funds[fund].is_liquidated():
+                return 1
+        return -1
+
+class NNDefender(Defender):
+    def __init__(self, initial_capital, asset_slicing, max_assets_in_action, neural_network):
+        super().__init__(initial_capital, asset_slicing, max_assets_in_action)
+        self.neural_network = neural_network
+
+    def game_reward(self, funds: Dict[str, Fund], history):
+        reward = 0
+        for fund in funds:
+            if funds[fund].is_liquidated():
+                reward -= self.neural_network.predict(fund.symbol, history)
+        return reward
 
 """
 

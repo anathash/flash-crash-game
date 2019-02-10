@@ -52,11 +52,10 @@ class GameState:
 
 
 class TwoPlayersGameState(GameState):
-    def __init__(self, network, defender_initial_capital, attacker_initial_portfolio, attacker_goals,
-                 attacker_asset_slicing, defender__asset_slicing, max_assets_in_action):
-        self.attacker = Attacker(attacker_initial_portfolio, attacker_goals, attacker_asset_slicing,
-                                 max_assets_in_action)
-        self.defender = Defender(defender_initial_capital, defender__asset_slicing, max_assets_in_action)
+
+    def __init__(self, network, attacker, defender):
+        self.defender = defender
+        self.attacker = attacker
         super().__init__(network, [self.attacker, self.defender])
 
     def game_reward(self):
