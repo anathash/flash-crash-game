@@ -13,7 +13,8 @@ class GameConfig:
                  attacker_asset_slicing=10,
                  defender_max_assets_in_action=3,
                  defender_asset_slicing=10,
-                 defender_initial_capital=1000000):
+                 defender_initial_capital=1000000,
+                 impact_calc_constant=1.0536):
 
         self.num_assets = num_assets
         self.num_funds = num_funds
@@ -30,6 +31,7 @@ class GameConfig:
         self.defender_max_assets_in_action = defender_max_assets_in_action
         self.defender_asset_slicing = defender_asset_slicing
         self.defender_initial_capital = defender_initial_capital
+        self.impact_calc_constant = impact_calc_constant
 
 
 

@@ -4,6 +4,7 @@ import itertools
 from copy import deepcopy
 from GameLogic import GameState, GameConfig
 from GameLogic.AssetFundNetwork import AssetFundsNetwork
+from GameLogic.MarketImpactCalculator import ExponentialMarketImpactCalculator
 from GameLogic.Players import Attacker, RobustDefender, OracleDefender, Defender
 from GameRunners.MCTS import UCT
 
@@ -87,7 +88,8 @@ class MultipleTournamentRunner:
     def __init__(self, csv_file_name, num_games_per_tournaments, network_file_name, defender_alg,
                  config: GameConfig):
         self.num_games_per_tournaments = num_games_per_tournaments
-        self.network = AssetFundsNetwork.load_from_file(network_file_name)
+        self.network = AssetFundsNetwork.load_from_file(network_file_name,
+                                                        ExponentialMarketImpactCalculator(self.config.impact_calc_constant))
         self.defender_alg = defender_alg
         self.config = config
         fieldnames = ['goals', 'attacker_wins', 'defender_wins', 'defender_alg']
