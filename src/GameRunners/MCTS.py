@@ -184,7 +184,6 @@ def UCTPlayTwoPlayersGame():
         state.print_winner()
 
 
-
 def UCTPlaySinglePlayersGame(state):
     """ Play a sample game between two UCT players where each player gets a different number
         of UCT iterations (= simulations = tree nodes).

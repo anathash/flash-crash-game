@@ -2,7 +2,7 @@ import random
 from math import floor
 from typing import List, Dict
 
-from GameLogic.Config import Config
+from GameLogic.SysConfig import SysConfig
 from GameLogic.Orders import Sell, Move, Order, Buy
 from GameLogic.AssetFundNetwork import Asset, Fund
 
@@ -98,7 +98,7 @@ class Attacker(Player):
         orders_list.extend(orders_to_add)
         for i in range(1, self.asset_slicing + 1):
             shares_to_sell = int(i * self.portfolio[asset.symbol] / self.asset_slicing)
-            if asset.price * shares_to_sell < Config.get(Config.MIN_ORDER_VALUE): #ignore small orders
+            if asset.price * shares_to_sell < SysConfig.get(SysConfig.MIN_ORDER_VALUE): #ignore small orders
                 continue
             order = Sell(asset.symbol, shares_to_sell, asset.price)
             orders_list.append([order])
@@ -221,7 +221,7 @@ class Defender(Player):
         capital_needed = capital_jump
         while buy_slice <= self.asset_slicing and capital_needed <= self.capital:
             shares_to_buy = int(asset.total_shares * buy_slice / self.asset_slicing)
-            if asset.price * shares_to_buy < Config.get(Config.MIN_ORDER_VALUE):  # ignore small orders
+            if asset.price * shares_to_buy < SysConfig.get(SysConfig.MIN_ORDER_VALUE):  # ignore small orders
                 buy_slice += 1
                 continue
             order = Buy(asset.symbol, shares_to_buy, asset.price)
@@ -264,9 +264,6 @@ class Defender(Player):
             capital_needed += capital_jump
         return orders_list
 
-    def __str__(self):
-        return 'Defender'
-
 
 class RobustDefender(Defender):
     def game_reward(self, funds: Dict[str, Fund],  history=None):
@@ -275,6 +272,9 @@ class RobustDefender(Defender):
             if fund.is_liquidated():
                 reward -= 1
         return reward
+
+    def __repr__(self):
+        return 'Robust Defender'
 
 
 class OracleDefender(Defender):
@@ -287,6 +287,9 @@ class OracleDefender(Defender):
             if not funds[fund].is_liquidated():
                 return 1
         return -1
+
+    def __repr__(self):
+        return 'Oracle Defender'
 
 class NNDefender(Defender):
     def __init__(self, initial_capital, asset_slicing, max_assets_in_action, neural_network):

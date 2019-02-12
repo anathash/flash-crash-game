@@ -163,7 +163,6 @@ class AssetFundsNetwork:
                     board[i, j] = fund.portfolio[sym] * self.assets[sym].price
         return board
 
-
     def apply_action(self, orders: List[Order]):
         liquidation_orders = []
         for order in orders:

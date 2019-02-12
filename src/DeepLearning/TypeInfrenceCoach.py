@@ -11,9 +11,9 @@ from random import shuffle
 
 from GameLogic import GameState
 from GameLogic.AssetFundNetwork import AssetFundsNetwork
-from GameLogic.Config import Config
+from GameLogic.GameConfig import GameConfig
 from GameLogic.GameState import SinglePlayerGameState
-from GameLogic.MCTS import UCT
+from GameRunners.MCTS import UCT
 from GameLogic.MarketImpactCalculator import ExponentialMarketImpactCalculator
 
 
@@ -22,9 +22,10 @@ class TypeInfrenceCoach():
     This class executes the self-play + learning. It uses the functions defined
     in Game and NeuralNet. args are specified in main.py.
     """
-    def __init__(self, example_folder_path):
+    def __init__(self, example_folder_path, config:GameConfig):
         self.trainExamplesHistory = []  # history of examples from args.numItersForTrainExamplesHistory latest iterations
         self.example_folder_path = example_folder_path
+        self.config = config
         #self.pnet = self.nnet.__class__(self.game)  # the competitor network
         #self.skipFirstSelfPlay = False # can be overriden in loadTrainExamples()
 
@@ -147,8 +148,7 @@ class TypeInfrenceCoach():
         for goal in goals:
             goal_fund = netowrk.funds[goal]
             for asset in goal_fund.portfolio:
-                portfolio[asset] = netowrk.assets[asset].total_shares * \
-                                   Config.get(Config.ATTACKER_PORTFOLIO_RATIO)
+                portfolio[asset] = netowrk.assets[asset].total_shares * self.config.attacker_portfolio_ratio
         return portfolio
 
     def saveGoalsExamples(self, goals, examples):
@@ -167,8 +167,8 @@ class TypeInfrenceCoach():
                 goals_list.append('f' + str(i))
         return goals_list
 
-    def gen_training_examples(self, network, num_funds, episodes_per_goal, uct_iterations):
-        goals = list(itertools.product([0, 1], repeat=num_funds))
+    def gen_training_examples(self, network, episodes_per_goal, uct_iterations):
+        goals = list(itertools.product([0, 1], repeat=self.config.num_funds))
         goals = goals[1:]
         for goal in goals:
             train_examples = []
@@ -176,9 +176,9 @@ class TypeInfrenceCoach():
             goals_list = self.gen_goals_fund_list(goals_vector)
             goals_string = ''.join([str(x) for x in goals_list])
             portfolio = self.create_portofolio(network, goals_list)
-            initial_state = SinglePlayerGameState(network, portfolio, goals_list,
-                                               Config.get(Config.ASSET_SLICING),
-                                               Config.get(Config.MAX_ASSETS_IN_ACTION))
+            initial_state = SinglePlayerGameState(network, portfolio,goals_list,
+                                                  self.config.attacker_asset_slicing,
+                                                  self.config.attacker_max_assets_in_action)
 
             for i in range(episodes_per_goal):
                 train_examples += self.executeEpisode(deepcopy(initial_state), uct_iterations)
@@ -187,10 +187,9 @@ class TypeInfrenceCoach():
             self.saveGoalsExamples(goals_string, train_examples)
 
 if __name__ == "__main__":
-    coach = TypeInfrenceCoach('../../resources/examples')
+    config = GameConfig(num_funds=4, num_assets=4)
+    coach = TypeInfrenceCoach('../../resources/examples', config)
     coach.loadTrainExamples('../../resources/examples/checkpoint_f0.pth.tar.examples')
-    num_funds = 4
-    num_assets = 4
     network = AssetFundsNetwork.load_from_file('../../resources/four_by_four_network.json', ExponentialMarketImpactCalculator(1.0536))
-    coach.gen_training_examples(network, num_funds =4 , episodes_per_goal=2, uct_iterations=10)
+    coach.gen_training_examples(network, episodes_per_goal=2, uct_iterations=10)
 

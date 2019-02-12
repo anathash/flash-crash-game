@@ -1,4 +1,24 @@
-class Config:
+class SysConfig:
+    MIN_ORDER_VALUE = "MIN_ORDER_VALUE"
+    DENSITY = "DENSITY"
+
+    __conf = {"MIN_ORDER_VALUE": 1000,
+              "DENSITY": 0.5
+              }
+
+    @staticmethod
+    def get(name):
+        return SysConfig.__conf[name]
+
+    @staticmethod
+    def set(name, value):
+        if name in SysConfig.__conf.keys():
+            SysConfig.__conf[name] = value
+        else:
+            raise NameError("Name not accepted in set() method")
+
+"""
+
     MIN_ORDER_VALUE = "MIN_ORDER_VALUE"
     DENSITY = "DENSITY"
     INITIAL_NUM_SHARES = "INITIAL_NUM_SHARES"
@@ -25,14 +45,4 @@ class Config:
               "NUM_FUNDS": 10,
               "NUM_ASSETS": 10
               }
-
-    @staticmethod
-    def get(name):
-        return Config.__conf[name]
-
-    @staticmethod
-    def set(name, value):
-        if name in Config.__conf.keys():
-            Config.__conf[name] = value
-        else:
-            raise NameError("Name not accepted in set() method")
+"""

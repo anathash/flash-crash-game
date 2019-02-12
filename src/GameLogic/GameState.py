@@ -39,6 +39,13 @@ class GameState:
             return
         print('No One Won!')
 
+    def get_winner(self):
+        if self.attacker.is_goal_achieved(self.network.funds):
+            return self.attacker
+        if self.attacker.resources_exhusted():
+            return self.defender
+        return None
+
     def GetResult(self, playerjm):
         return playerjm.game_reward(self.network.funds)
 

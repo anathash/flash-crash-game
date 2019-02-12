@@ -3,7 +3,7 @@ from typing import Dict
 
 from numpy import sort
 
-from GameLogic.Config import Config
+from GameLogic.SysConfig import SysConfig
 from GameLogic.Orders import Sell, Buy
 from GameLogic.AssetFundNetwork import Fund, Asset
 from GameLogic.Players import Attacker, RobustDefender, OracleDefender
@@ -21,7 +21,7 @@ class AttackerTest  (unittest.TestCase):
 
     @classmethod
     def setUpClass(cls):
-        Config.set("MIN_ORDER_VALUE", 0.5)
+        SysConfig.set("MIN_ORDER_VALUE", 0.5)
 
     def test_resources_exhusted_false_when_portfolio_not_empty(self):
         attacker = Attacker({'a1': 300, 'a2': 400}, ['f1'], 4, 2)
@@ -59,7 +59,7 @@ class AttackerTest  (unittest.TestCase):
             attacker.apply_action(orders)
 
     def test_no_actions_below_min(self):
-        Config.set(Config.MIN_ORDER_VALUE, 500)
+        SysConfig.set(SysConfig.MIN_ORDER_VALUE, 500)
         attacker = Attacker({'a1': 300}, ['f1', 'f2'], 2, 2)
         expected_orders = [[Sell('a1', 300, 2)]]
         e = to_string_list(expected_orders)
@@ -145,10 +145,10 @@ class RobustDefenderTest  (unittest.TestCase):
 
     @classmethod
     def setUpClass(cls):
-        Config.set(Config.MIN_ORDER_VALUE, 0.5)
+        SysConfig.set(SysConfig.MIN_ORDER_VALUE, 0.5)
 
     def test_no_actions_below_min(self):
-        Config.set(Config.MIN_ORDER_VALUE, 100)
+        SysConfig.set(SysConfig.MIN_ORDER_VALUE, 100)
         defender = RobustDefender(200, 2, 2)
         actual_orders = defender.get_valid_actions({'a1': Asset(2, 60, 'a1')})
         expected_orders = [[Buy('a1', 60, 2)]]

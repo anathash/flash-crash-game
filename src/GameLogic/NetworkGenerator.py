@@ -1,5 +1,5 @@
 from GameLogic.AssetFundNetwork import AssetFundsNetwork
-from GameLogic.Config import Config
+from GameLogic.GameConfig import GameConfig
 from GameLogic.MarketImpactCalculator import ExponentialMarketImpactCalculator
 
 
@@ -13,16 +13,16 @@ class NetworkGenerator():
 """
     @staticmethod
     def generate_and_save_rand_10_by_10_network(file_name):
-        num_funds = Config.get(Config.NUM_FUNDS)
-        num_assets = Config.get(Config.NUM_ASSETS)
-        assets_num_shares = [Config.get(Config.INITIAL_NUM_SHARES)] * num_assets
-        initial_prices = [Config.get(Config.INITIAL_ASSET_PRICE)] * num_assets
+        num_funds = GameConfig.get(GameConfig.NUM_FUNDS)
+        num_assets = GameConfig.get(GameConfig.NUM_ASSETS)
+        assets_num_shares = [GameConfig.get(GameConfig.INITIAL_NUM_SHARES)] * num_assets
+        initial_prices = [GameConfig.get(GameConfig.INITIAL_ASSET_PRICE)] * num_assets
 
-        initial_capitals = [Config.get(Config.INITIAL_FUND_CAPITAL)] * num_funds
-        initial_leverages = [Config.get(Config.INITIAL_LEVERAGE)] * num_funds
-        tolerances = [Config.get(Config.TOLERANCE)] * num_funds
+        initial_capitals = [GameConfig.get(GameConfig.INITIAL_FUND_CAPITAL)] * num_funds
+        initial_leverages = [GameConfig.get(GameConfig.INITIAL_LEVERAGE)] * num_funds
+        tolerances = [GameConfig.get(GameConfig.TOLERANCE)] * num_funds
 
-        g = AssetFundsNetwork.generate_random_network(Config.get(Config.DENSITY),
+        g = AssetFundsNetwork.generate_random_network(GameConfig.get(GameConfig.DENSITY),
                                                       num_funds,
                                                       num_assets,
                                                       initial_capitals,
@@ -33,14 +33,14 @@ class NetworkGenerator():
 
     @staticmethod
     def generate_and_save_rand_network(file_name, num_funds, num_assets):
-        assets_num_shares = [Config.get(Config.INITIAL_NUM_SHARES)] * num_assets
-        initial_prices = [Config.get(Config.INITIAL_ASSET_PRICE)] * num_assets
+        assets_num_shares = [GameConfig.get(GameConfig.INITIAL_NUM_SHARES)] * num_assets
+        initial_prices = [GameConfig.get(GameConfig.INITIAL_ASSET_PRICE)] * num_assets
 
-        initial_capitals = [Config.get(Config.INITIAL_FUND_CAPITAL)] * num_funds
-        initial_leverages = [Config.get(Config.INITIAL_LEVERAGE)] * num_funds
-        tolerances = [Config.get(Config.TOLERANCE)] * num_funds
+        initial_capitals = [GameConfig.get(GameConfig.INITIAL_FUND_CAPITAL)] * num_funds
+        initial_leverages = [GameConfig.get(GameConfig.INITIAL_LEVERAGE)] * num_funds
+        tolerances = [GameConfig.get(GameConfig.TOLERANCE)] * num_funds
 
-        g = AssetFundsNetwork.generate_random_network(Config.get(Config.DENSITY),
+        g = AssetFundsNetwork.generate_random_network(GameConfig.get(GameConfig.DENSITY),
                                                       num_funds,
                                                       num_assets,
                                                       initial_capitals,

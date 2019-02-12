@@ -2,7 +2,7 @@
 
 from GameLogic import GameState
 from GameLogic.AssetFundNetwork import AssetFundsNetwork
-from GameLogic.MCTS import UCT
+from GameRunners.MCTS import UCT
 from GameLogic.MarketImpactCalculator import ExponentialMarketImpactCalculator
 
 
