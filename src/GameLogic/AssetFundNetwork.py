@@ -103,7 +103,7 @@ class AssetFundsNetwork:
         for fund_node in list(fund_nodes):
             fund_symbol = 'f' + str(fund_node)
             investments = list(g.out_edges(fund_node))
-            rand = list(numpy.random.randint(0, 10, len(investments)))
+            rand = list(numpy.random.randint(1, 10, size=len(investments)))
             rand_sum = sum(rand)
             investment_proportions[fund_symbol] = [float(i) / rand_sum for i in rand]
 
