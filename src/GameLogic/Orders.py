@@ -9,7 +9,7 @@ class Order:
 
     def __eq__(self, other):
         return isinstance(other, Order) and \
-               self.asset_symbol == other.asset_symbol and\
+               self.asset_symbol == other.asset_symbol and \
                self.num_shares == other.num_shares and \
                self.share_price == other.share_price
 

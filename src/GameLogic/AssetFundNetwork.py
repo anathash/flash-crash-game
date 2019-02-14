@@ -16,17 +16,18 @@ from GameLogic.Orders import Order, Sell
 
 
 class Asset:
-    def __init__(self, price, total_shares, symbol):
+    def __init__(self, price, daily_volume, volatility, symbol):
         self.price = price
-        self.total_shares = total_shares
+        self.daily_volume = daily_volume
         self.symbol = symbol
+        self.volatility = volatility
 
     def set_price(self, new_price):
         self.price = new_price
 
     def __eq__(self, other):
-        return isinstance(other, Asset) and self.price == other.price and self.total_shares == other.total_shares \
-               and self.symbol == other.symbol
+        return isinstance(other, Asset) and self.price == other.price and self.daily_volume == other.daily_volume \
+               and self.volatility == other.volatility and self.symbol == other.symbol
 
 
 class Fund:
@@ -88,7 +89,7 @@ class AssetFundsNetwork:
 
     @classmethod
     def generate_random_network(cls, density, num_funds, num_assets, initial_capitals, initial_leverages,
-                                assets_initial_prices, tolerances, assets_num_shares, mi_calc: MarketImpactCalculator):
+                                assets_initial_prices, tolerances, assets_num_shares, volatility, mi_calc: MarketImpactCalculator):
         connected = False
         while not connected:
             g = nx.algorithms.bipartite.random_graph(num_funds, num_assets, density, directed=True)
@@ -108,19 +109,19 @@ class AssetFundsNetwork:
 
         return cls.gen_network_from_graph(g, investment_proportions, initial_capitals,
                                           initial_leverages, assets_initial_prices,
-                                          tolerances, assets_num_shares, mi_calc)
+                                          tolerances, assets_num_shares, volatility, mi_calc)
 
     @classmethod
     def gen_network_from_graph(cls, g, investment_proportions,
                                initial_capitals, initial_leverages, assets_initial_prices,
-                               tolerances, assets_num_shares, mi_calc: MarketImpactCalculator):
+                               tolerances, assets_num_shares, volatility, mi_calc: MarketImpactCalculator):
         funds = {}
         assets = {}
         fund_nodes, asset_nodes = nx.bipartite.sets(g)
         num_funds = len(fund_nodes)
         for i in range(len(asset_nodes)):
             symbol = 'a' + str(i)
-            assets[symbol] = Asset(assets_initial_prices[i], assets_num_shares[i], symbol)
+            assets[symbol] = Asset(assets_initial_prices[i], assets_num_shares[i], volatility[i], symbol)
         for i in range(num_funds):
             portfolio = {}
             fund_symbol = 'f' + str(i)
@@ -167,7 +168,7 @@ class AssetFundsNetwork:
         liquidation_orders = []
         for order in orders:
             asset = self.assets[order.asset_symbol]
-            new_price = asset.price * self.mi_calc.get_market_impact(order, asset.total_shares)
+            new_price = asset.price * self.mi_calc.get_market_impact(order, asset)
             asset.set_price(new_price)
         for fund in self.funds.values():
             if not fund.is_liquidated():

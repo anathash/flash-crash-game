@@ -199,10 +199,10 @@ class Defender(Player):
             while i < num_assets and action_required_capital < self.capital:
                 asset = chosen_assets[i]
                 portion = random.randint(1, self.asset_slicing)
-                order_required_capital = portion * asset.price * asset.total_shares/ self.asset_slicing
+                order_required_capital = portion * asset.price * asset.daily_volume/ self.asset_slicing
                 if order_required_capital + action_required_capital > self.capital:
-                    portion = int(floor((self.capital * self.asset_slicing) / (asset.price * asset.total_shares)))
-                order = Buy(asset.symbol, portion*chosen_assets[i].total_shares/self.asset_slicing, asset.price)
+                    portion = int(floor((self.capital * self.asset_slicing) / (asset.price * asset.daily_volume)))
+                order = Buy(asset.symbol, portion*chosen_assets[i].daily_volume/self.asset_slicing, asset.price)
                 action_required_capital += order_required_capital
                 orders.append(order)
                 i += 1
@@ -217,10 +217,10 @@ class Defender(Player):
         buy_slice = 1
         orders_to_add = self.gen_orders_rec(assets[1:])
         orders_list.extend(orders_to_add)
-        capital_jump = asset.price * asset.total_shares / self.asset_slicing
+        capital_jump = asset.price * asset.daily_volume / self.asset_slicing
         capital_needed = capital_jump
         while buy_slice <= self.asset_slicing and capital_needed <= self.capital:
-            shares_to_buy = int(asset.total_shares * buy_slice / self.asset_slicing)
+            shares_to_buy = int(asset.daily_volume * buy_slice / self.asset_slicing)
             if asset.price * shares_to_buy < SysConfig.get(SysConfig.MIN_ORDER_VALUE):  # ignore small orders
                 buy_slice += 1
                 continue
@@ -246,10 +246,10 @@ class Defender(Player):
         buy_percent = self.buy_share_portion_jump
         orders_to_add = self.gen_orders_rec(assets[1:])
         orders_list.extend(orders_to_add)
-        capital_jump = self.buy_share_portion_jump * asset.price * asset.total_shares
+        capital_jump = self.buy_share_portion_jump * asset.price * asset.daily_volume
         capital_needed = capital_jump
         while buy_percent <= 1 and capital_needed <= self.capital:
-            shares_to_buy = int(buy_percent * asset.total_shares)
+            shares_to_buy = int(buy_percent * asset.daily_volume)
             order = Buy(asset.symbol, shares_to_buy, asset.price)
             orders_list.append(([order], capital_needed))
             for tup in orders_to_add:
@@ -309,12 +309,12 @@ class NNDefender(Defender):
         orders_lists = []
         for sym, asset in assets.items():
             buy_percent = self.buy_share_portion_jump
-            capital_needed = buy_percent * asset.price * asset.total_shares
+            capital_needed = buy_percent * asset.price * asset.daily_volume
             orders = []
             while buy_percent <= 1 and capital_needed <= self.capital:
-                orders.append(Buy(sym, int(buy_percent * asset.total_shares), asset.price))
+                orders.append(Buy(sym, int(buy_percent * asset.daily_volume), asset.price))
                 buy_percent += self.buy_share_portion_jump
-                capital_needed = buy_percent * asset.price * asset.total_shares
+                capital_needed = buy_percent * asset.price * asset.daily_volume
             if orders:
                 orders_lists.append(orders)
         return orders_lists
@@ -338,13 +338,13 @@ class NNDefender(Defender):
         orders_list = []
         asset = assets[0]
         buy_percent = self.buy_share_portion_jump
-        capital_jump = self.buy_share_portion_jump * asset.price * asset.total_shares
+        capital_jump = self.buy_share_portion_jump * asset.price * asset.daily_volume
         capital_needed = capital_jump
         'orders without current asset'
         if len(assets) > 1:
             orders_list.extend(self.gen_orders_rec(money_left, assets[1:]))
         while buy_percent <= 1 and capital_needed <= money_left:
-            shares_to_buy = int(buy_percent * asset.total_shares)
+            shares_to_buy = int(buy_percent * asset.daily_volume)
             order = Buy(asset.symbol, shares_to_buy, asset.price)
             orders_list.append([order])
             'orders that include current asset'
@@ -365,13 +365,13 @@ class NNDefender(Defender):
         orders_list = []
         asset = assets[0]
         buy_percent = self.buy_share_portion_jump
-        capital_jump = self.buy_share_portion_jump * asset.price * asset.total_shares
+        capital_jump = self.buy_share_portion_jump * asset.price * asset.daily_volume
         capital_needed = capital_jump
         'orders without current asset'
         if len(assets) > 1:
             orders_list.extend(self.gen_orders_rec(money_left, assets[1:]))
         while buy_percent <= 1 and capital_needed <= money_left:
-            shares_to_buy = int(buy_percent * asset.total_shares)
+            shares_to_buy = int(buy_percent * asset.daily_volume)
             order = Buy(asset.symbol, shares_to_buy, asset.price)
             orders_list.append(([order], capital_needed))
             orders_to_add = self.gen_orders_rec(money_left - capital_needed, assets[1:])

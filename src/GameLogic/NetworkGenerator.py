@@ -33,14 +33,14 @@ class NetworkGenerator():
 
     @staticmethod
     def generate_and_save_rand_network(file_name, num_funds, num_assets):
-        assets_num_shares = [GameConfig.get(GameConfig.INITIAL_NUM_SHARES)] * num_assets
-        initial_prices = [GameConfig.get(GameConfig.INITIAL_ASSET_PRICE)] * num_assets
+        assets_num_shares = [GameConfig.get(SysConfig.INITIAL_NUM_SHARES)] * num_assets
+        initial_prices = [GameConfig.get(SysConfig.INITIAL_ASSET_PRICE)] * num_assets
 
-        initial_capitals = [GameConfig.get(GameConfig.INITIAL_FUND_CAPITAL)] * num_funds
-        initial_leverages = [GameConfig.get(GameConfig.INITIAL_LEVERAGE)] * num_funds
-        tolerances = [GameConfig.get(GameConfig.TOLERANCE)] * num_funds
+        initial_capitals = [GameConfig.get(SysConfig.INITIAL_FUND_CAPITAL)] * num_funds
+        initial_leverages = [GameConfig.get(SysConfig.INITIAL_LEVERAGE)] * num_funds
+        tolerances = [GameConfig.get(SysConfig.TOLERANCE)] * num_funds
 
-        g = AssetFundsNetwork.generate_random_network(GameConfig.get(GameConfig.DENSITY),
+        g = AssetFundsNetwork.generate_random_network(SysConfig.get(SysConfig.DENSITY),
                                                       num_funds,
                                                       num_assets,
                                                       initial_capitals,

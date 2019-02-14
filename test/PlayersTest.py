@@ -63,7 +63,7 @@ class AttackerTest  (unittest.TestCase):
         attacker = Attacker({'a1': 300}, ['f1', 'f2'], 2, 2)
         expected_orders = [[Sell('a1', 300, 2)]]
         e = to_string_list(expected_orders)
-        actual_orders = attacker.get_valid_actions({'a1': Asset(2, 200, 'a1')})
+        actual_orders = attacker.get_valid_actions({'a1': Asset(2, 200, 1.5, 'a1')})
         a = to_string_list(actual_orders)
         self.assertListEqual(e, a)
 
@@ -77,7 +77,7 @@ class AttackerTest  (unittest.TestCase):
              [Sell('a1', 300, 2), Sell('a2', 200, 2)],
              [Sell('a1', 300, 2), Sell('a2', 400, 2)]]
         e = to_string_list(expected_orders)
-        actual_orders = attacker.get_valid_actions({'a1': Asset(2, 200, 'a1'), 'a2': Asset(2, 300, 'a2')})
+        actual_orders = attacker.get_valid_actions({'a1': Asset(2, 200, 1.5, 'a1'), 'a2': Asset(2, 300, 1.5, 'a2')})
         a = to_string_list(actual_orders)
         self.assertListEqual(e, a)
 
@@ -87,7 +87,7 @@ class AttackerTest  (unittest.TestCase):
             [[Sell('a1', 150, 2)], [Sell('a1', 300, 2)],
              [Sell('a2', 200, 2)], [Sell('a2', 400, 2)]]
         e = to_string_list(expected_orders)
-        actual_orders = attacker.get_valid_actions({'a1': Asset(2, 200, 'a1'), 'a2': Asset(2, 300, 'a2')})
+        actual_orders = attacker.get_valid_actions({'a1': Asset(2, 200, 1.5, 'a1'), 'a2': Asset(2, 300, 1.5, 'a2')})
         a = to_string_list(actual_orders)
         self.assertListEqual(e, a)
 
@@ -110,13 +110,13 @@ class AttackerTest  (unittest.TestCase):
              [Sell('a2', 400, 2), Sell('a3', 50, 2)],
              [Sell('a2', 400, 2), Sell('a3', 100, 2)]]
         e = to_string_list(expected_orders)
-        actual_orders = attacker.get_valid_actions({'a1': Asset(2, 500, 'a1'), 'a2': Asset(2, 500, 'a2'),
-                                                    'a3': Asset(2, 500, 'a3')})
+        actual_orders = attacker.get_valid_actions({'a1': Asset(2, 500, 1.5, 'a1'), 'a2': Asset(2, 500, 1.5, 'a2'),
+                                                    'a3': Asset(2, 500, 1.5, 'a3')})
         a = to_string_list(actual_orders)
         self.assertListEqual(e, a)
 
     def test_gen_random_action(self):
-        assets = {'a1': Asset(2, 500, 'a1'), 'a2': Asset(2, 500, 'a2'), 'a3': Asset(2, 500, 'a3')}
+        assets = {'a1': Asset(2, 500, 1.5, 'a1'), 'a2': Asset(2, 500, 1.5, 'a2'), 'a3': Asset(2, 500, 1.5, 'a3')}
         attacker = Attacker({'a1': 300, 'a2': 400, 'a3': 100}, ['f1', 'f2'], 2, 2)
         for i in range(0, 100):
             orders = attacker.gen_random_action(assets)
@@ -150,7 +150,7 @@ class RobustDefenderTest  (unittest.TestCase):
     def test_no_actions_below_min(self):
         SysConfig.set(SysConfig.MIN_ORDER_VALUE, 100)
         defender = RobustDefender(200, 2, 2)
-        actual_orders = defender.get_valid_actions({'a1': Asset(2, 60, 'a1')})
+        actual_orders = defender.get_valid_actions({'a1': Asset(2, 60, 1.5, 'a1')})
         expected_orders = [[Buy('a1', 60, 2)]]
         e = to_string_list(expected_orders)
         a = to_string_list(actual_orders)
@@ -166,7 +166,7 @@ class RobustDefenderTest  (unittest.TestCase):
 
     def test_set_resources_exhusted_when_no_valid_actions(self):
         defender = RobustDefender(10, 2, 2)
-        orders = defender.get_valid_actions({'a1': Asset(600, 200, 'a1'), 'a2': Asset(600, 300, 'a2')})
+        orders = defender.get_valid_actions({'a1': Asset(600, 200, 1.5, 'a1'), 'a2': Asset(600, 300, 1.5, 'a2')})
         self.assertFalse(orders)
         self.assertTrue(defender.resources_exhusted())
 
@@ -202,7 +202,7 @@ class RobustDefenderTest  (unittest.TestCase):
         expected_orders = \
             [[Buy('a1', 100, 2)], [Buy('a1', 200, 2)], [Buy('a2', 150, 2)], [Buy('a1', 100, 2), Buy('a2', 150, 2)]]
         e = to_string_list(expected_orders)
-        actual_orders = defender.get_valid_actions({'a1': Asset(2, 200, 'a1'), 'a2': Asset(2, 300, 'a2')})
+        actual_orders = defender.get_valid_actions({'a1': Asset(2, 200, 1.5, 'a1'), 'a2': Asset(2, 300, 1.5, 'a2')})
         a = to_string_list(actual_orders)
         self.assertListEqual(e, a)
 
@@ -211,7 +211,7 @@ class RobustDefenderTest  (unittest.TestCase):
         expected_orders = \
             [[Buy('a1', 100, 2)], [Buy('a1', 200, 2)], [Buy('a2', 150, 2)]]
         e = to_string_list(expected_orders)
-        actual_orders = defender.get_valid_actions({'a1': Asset(2, 200, 'a1'), 'a2': Asset(2, 300, 'a2')})
+        actual_orders = defender.get_valid_actions({'a1': Asset(2, 200, 1.5, 'a1'), 'a2': Asset(2, 300, 1.5,'a2')})
         a = to_string_list(actual_orders)
         self.assertListEqual(e, a)
 
@@ -228,13 +228,13 @@ class RobustDefenderTest  (unittest.TestCase):
              [Buy('a2', 150, 2), Buy('a3', 100, 2)]]
 
         e = to_string_list(expected_orders)
-        actual_orders = defender.get_valid_actions({'a1': Asset(2, 200, 'a1'), 'a2': Asset(2, 300, 'a2'),
-                                                    'a3': Asset(2, 100, 'a3')})
+        actual_orders = defender.get_valid_actions({'a1': Asset(2, 200, 1.5, 'a1'), 'a2': Asset(2, 300, 1.5, 'a2'),
+                                                    'a3': Asset(2, 100, 1.5, 'a3')})
         a = to_string_list(actual_orders)
         self.assertListEqual(e, a)
 
     def test_gen_random_action(self):
-        assets = {'a1': Asset(2, 500, 'a1'), 'a2': Asset(2, 500, 'a2'), 'a3': Asset(2, 500, 'a3')}
+        assets = {'a1': Asset(2, 500, 1.5, 'a1'), 'a2': Asset(2, 500, 1.5, 'a2'), 'a3': Asset(2, 500, 1.5, 'a3')}
         defender = RobustDefender(500, 2, 1)
         for i in range(100):
             orders = defender.gen_random_action(assets)
@@ -247,8 +247,8 @@ class RobustDefenderTest  (unittest.TestCase):
     def assert_valid_order(self, defender: RobustDefender, buy: Buy, assets: Dict[str, Asset]):
         asset = assets[buy.asset_symbol]
         self.assertEqual(buy.share_price, asset.price)
-        self.assertTrue(buy.num_shares <= asset.total_shares)
-        self.assertTrue(buy.num_shares*buy.share_price <= defender.capital)
+        self.assertTrue(buy.num_shares <= asset.daily_volume)
+        self.assertTrue(buy.num_shares * buy.share_price <= defender.capital)
 
 
 """

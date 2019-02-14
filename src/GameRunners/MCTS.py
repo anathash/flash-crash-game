@@ -125,8 +125,8 @@ def UCT(rootstate: GameState, itermax, verbose=False):
     # Output some information about the tree - can be omitted
     if (verbose):
         print(rootnode.TreeToString(0))
-    else:
-        print(rootnode.ChildrenToString())
+#    else:
+#        print(rootnode.ChildrenToString())
 
     if not rootnode.childNodes:
        return rootnode.childNodes
@@ -162,7 +162,7 @@ def UCTPlayTwoPlayersGame():
         goals.append(goal_fund_sym)
         goal_fund = g.funds[goal_fund_sym]
         for asset in goal_fund.portfolio:
-            attacker_portfolio[asset] = g.assets[asset].total_shares*0.1
+            attacker_portfolio[asset] = g.assets[asset].daily_volume*0.1
 
     attacker = Attacker(initial_portfolio=attacker_portfolio, goals=goals, asset_slicing=10, max_assets_in_action=1)
     defender = OracleDefender(initial_capital=100000, asset_slicing=10, max_assets_in_action=2, goals=goals)
@@ -225,7 +225,7 @@ if __name__ == "__main__":
         goals.append(goal_fund_sym)
         goal_fund = g.funds[goal_fund_sym]
         for asset in goal_fund.portfolio:
-            attacker_portfolio[asset] = g.assets[asset].total_shares * 0.2
+            attacker_portfolio[asset] = g.assets[asset].daily_volume * 0.2
 
     UCTPlayTwoPlayersGame()
 

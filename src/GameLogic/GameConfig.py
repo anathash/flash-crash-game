@@ -3,16 +3,17 @@ class GameConfig:
                  num_funds=10,
                  min_order_value=1000,
                  density=0.5,
-                 initial_num_shares=500,
+                 asset_daily_volume=500,
+                 asset_volatility=1.2,
                  initial_asset_price=1000,
                  initial_fund_capital=500000,
                  initial_leverage=2,
-                 tolerance=1.01,
-                 attacker_portfolio_ratio=0.2,
+                 tolerance=2,
+                 attacker_portfolio_ratio=0.05,
                  attacker_max_assets_in_action=3,
-                 attacker_asset_slicing=10,
+                 attacker_asset_slicing=20,
                  defender_max_assets_in_action=3,
-                 defender_asset_slicing=10,
+                 defender_asset_slicing=20,
                  defender_initial_capital=1000000,
                  impact_calc_constant=1.0536):
 
@@ -20,7 +21,8 @@ class GameConfig:
         self.num_funds = num_funds
         self.min_order_value = min_order_value
         self.density = density
-        self.initial_num_shares = initial_num_shares
+        self.asset_daily_volume = asset_daily_volume
+        self.asset_volatility = asset_volatility
         self.initial_asset_price = initial_asset_price
         self.initial_fund_capital = initial_fund_capital
         self.initial_leverage = initial_leverage

@@ -148,7 +148,7 @@ class TypeInfrenceCoach():
         for goal in goals:
             goal_fund = netowrk.funds[goal]
             for asset in goal_fund.portfolio:
-                portfolio[asset] = netowrk.assets[asset].total_shares * self.config.attacker_portfolio_ratio
+                portfolio[asset] = netowrk.assets[asset].daily_volume * self.config.attacker_portfolio_ratio
         return portfolio
 
     def saveGoalsExamples(self, goals, examples):

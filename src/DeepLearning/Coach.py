@@ -35,7 +35,7 @@ def UCTPlayGame():
         goals.append(goal_fund_sym)
         goal_fund = g.funds[goal_fund_sym]
         for asset in goal_fund.portfolio:
-            attacker_portfolio[asset] = g.assets[asset].total_shares*0.2
+            attacker_portfolio[asset] = g.assets[asset].daily_volume*0.2
 
     state = GameState.SinglePlayerGameState(g, 100000, attacker_portfolio, goals, 10, 10, 1)  # uncomment to play Nim with the given number of starting chips
     while (not state.game_ended()):
