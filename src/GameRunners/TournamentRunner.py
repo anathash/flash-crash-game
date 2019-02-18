@@ -93,6 +93,7 @@ class MultipleTournamentRunner:
         self.num_games_per_tournaments = num_games_per_tournament
         self.network = AssetFundsNetwork.load_from_file(network_file_name,
                                                         ExponentialMarketImpactCalculator(self.config.impact_calc_constant))
+        self.network.run_intraday_simulation(config.intraday_asset_gain_max_range)
         self.defender_alg = defender_alg
         fieldnames = ['goals', 'attacker_wins', 'defender_wins', 'avg_num_moves', 'defender_alg']
         fieldnames.extend(self.config.__dict__.keys())
@@ -133,7 +134,7 @@ class MultipleTournamentRunner:
 if __name__ == "__main__":
     config = GameConfig()
     csv_file_name = '../../resources/ten_by_ten_oracle.csv'
-    runner = MultipleTournamentRunner(csv_file_name, 100, '../../resources/ten_by_ten_network.json', 'oracle', config)
+    runner = MultipleTournamentRunner(csv_file_name, 10, '../../resources/ten_by_ten_network.json', 'oracle', config)
     goals = [['f0', 'f1'], ['f0']]
     runner.run_for_goals_set(goals)
     exit(0)

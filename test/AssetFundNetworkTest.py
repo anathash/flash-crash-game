@@ -195,6 +195,27 @@ class TestAssetFundsNetwork  (unittest.TestCase):
         actual_canonical_form = network.get_canonical_form()
         self.assertTrue(np.array_equal(expected_canonical_form, actual_canonical_form))
 
+    def test_run_intraday_simulation_price_not_changed(self):
+        a0 = Asset(price=1, daily_volume=40, volatility=1.5, symbol='a0')
+        a1 = Asset(price=2, daily_volume=40, volatility=1.5, symbol='a1')
+        f0 = Fund('f0', {'a0': 10}, initial_capital=2, initial_leverage=8, tolerance=2)
+        f1 = Fund('f1', {'a0': 10, 'a1': 1}, initial_capital=1, initial_leverage=1, tolerance=3)
+        network = AssetFundsNetwork({'f0': f0, 'f1': f1}, {'a0': a0, 'a1': a1},
+                                    MockMarketImpactTestCalculator())
+        network.run_intraday_simulation(1.5)
+        self.assertTrue(a0.price >= 1)
+        self.assertTrue(a1.price >= 2)
+
+    def test_run_intraday_simulation_raises_exception_for_proce_reduction(self):
+        a0 = Asset(price=1, daily_volume=40, volatility=1.5, symbol='a0')
+        a1 = Asset(price=2, daily_volume=40, volatility=1.5, symbol='a1')
+        f0 = Fund('f0', {'a0': 10}, initial_capital=2, initial_leverage=8, tolerance=2)
+        f1 = Fund('f1', {'a0': 10, 'a1': 1}, initial_capital=1, initial_leverage=1, tolerance=3)
+        network = AssetFundsNetwork({'f0': f0, 'f1': f1}, {'a0': a0, 'a1': a1},
+                                    MockMarketImpactTestCalculator())
+
+        with self.assertRaises(ValueError):
+            network.run_intraday_simulation(0.8)
 
 
 if __name__ == '__main__':

@@ -3,19 +3,20 @@ class GameConfig:
                  num_funds=10,
                  min_order_value=1000,
                  density=0.5,
-                 asset_daily_volume=500,
+                 asset_daily_volume=5000,
                  asset_volatility=1.2,
                  initial_asset_price=1000,
                  initial_fund_capital=500000,
                  initial_leverage=2,
                  tolerance=2,
                  attacker_portfolio_ratio=0.05,
-                 attacker_max_assets_in_action=3,
+                 attacker_max_assets_in_action=1,
                  attacker_asset_slicing=20,
                  defender_max_assets_in_action=3,
                  defender_asset_slicing=20,
                  defender_initial_capital=1000000,
-                 impact_calc_constant=1.0536):
+                 impact_calc_constant=1.0536,
+                 intraday_asset_gain_max_range=1.1):
 
         self.num_assets = num_assets
         self.num_funds = num_funds
@@ -34,6 +35,7 @@ class GameConfig:
         self.defender_asset_slicing = defender_asset_slicing
         self.defender_initial_capital = defender_initial_capital
         self.impact_calc_constant = impact_calc_constant
+        self. intraday_asset_gain_max_range = intraday_asset_gain_max_range
 
 
 

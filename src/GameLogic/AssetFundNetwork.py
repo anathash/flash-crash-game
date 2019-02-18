@@ -1,5 +1,6 @@
 #!/usr/bin/python
 import json
+import random
 from math import floor
 
 import networkx as nx
@@ -67,17 +68,19 @@ class Fund:
     """ leverage = curr_portfolio_value / curr_capital -1"""
 
     def compute_curr_leverage(self, assets):
-        return self.compute_portfolio_value(assets) / self.capital - 1
+            return self.compute_portfolio_value(assets) / self.capital - 1
 
     def marginal_call(self, assets):
         return self.compute_curr_leverage(assets) / self.initial_leverage < self.tolerance
 
 
 class AssetFundsNetwork:
-    def __init__(self, funds: Dict[str, Fund], assets: Dict[str, Asset], mi_calc: MarketImpactCalculator):
+    def __init__(self, funds: Dict[str, Fund], assets: Dict[str, Asset], mi_calc: MarketImpactCalculator, intraday_asset_gain_max_range =None):
         self.mi_calc = mi_calc
         self.funds = funds
         self.assets = assets
+        if intraday_asset_gain_max_range:
+            self.run_intraday_simulation(intraday_asset_gain_max_range)
 
     def __eq__(self, other):
         return isinstance(other, AssetFundsNetwork) and isinstance(other.mi_calc, type(self.mi_calc)) and \
@@ -86,6 +89,12 @@ class AssetFundsNetwork:
     def __repr__(self):
         return str(self.funds)
 
+    def run_intraday_simulation(self, intraday_asset_gain_max_range):
+        if (intraday_asset_gain_max_range < 1):
+            raise ValueError
+        for asset in self.assets.values():
+            price_gain = random.uniform(1, intraday_asset_gain_max_range)
+            asset.set_price(asset.price * price_gain)
 
     @classmethod
     def generate_random_network(cls, density, num_funds, num_assets, initial_capitals, initial_leverages,
@@ -135,6 +144,7 @@ class AssetFundsNetwork:
                     portfolio[asset_symbol] = floor(investment_proportions[fund_symbol][j] * fund_capital/asset.price)
             funds[fund_symbol] = Fund(fund_symbol, portfolio, initial_capitals[i], initial_leverages[i], tolerances[i])
         return cls(funds, assets, mi_calc)
+
 
     @classmethod
     def load_from_file(cls, file_name, mi_calc: MarketImpactCalculator):
