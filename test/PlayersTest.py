@@ -49,7 +49,7 @@ class AttackerTest  (unittest.TestCase):
         attacker.apply_action(orders)
         self.assertEqual(attacker.portfolio['a1'], 150)
         self.assertEqual(attacker.portfolio['a2'], 200)
-        self.assertEqual(attacker.capital, 700)
+        self.assertEqual(attacker.initial_capital, 700)
         self.assertEqual(len(attacker.portfolio.items()), 2)
 
     def test_apply_illegal_action(self):
@@ -188,7 +188,7 @@ class RobustDefenderTest  (unittest.TestCase):
         defender.apply_action(orders)
         self.assertEqual(defender.portfolio['a1'], 100)
         self.assertEqual(defender.portfolio['a2'], 100)
-        self.assertEqual(defender.capital, 0)
+        self.assertEqual(defender.initial_capital, 0)
         self.assertEqual(len(defender.portfolio.items()), 2)
 
     def test_apply_illegal_action(self):
@@ -242,13 +242,13 @@ class RobustDefenderTest  (unittest.TestCase):
             for order in orders:
                 self.assert_valid_order(defender, order, assets)
                 required_capital += order.num_shares * order.share_price
-            self.assertTrue(required_capital <= defender.capital)
+            self.assertTrue(required_capital <= defender.initial_capital)
 
     def assert_valid_order(self, defender: RobustDefender, buy: Buy, assets: Dict[str, Asset]):
         asset = assets[buy.asset_symbol]
         self.assertEqual(buy.share_price, asset.price)
         self.assertTrue(buy.num_shares <= asset.daily_volume)
-        self.assertTrue(buy.num_shares * buy.share_price <= defender.capital)
+        self.assertTrue(buy.num_shares * buy.share_price <= defender.initial_capital)
 
 
 """

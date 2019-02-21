@@ -10,7 +10,7 @@ from GameLogic.AssetFundNetwork import Asset, Fund
 class Player:
     def __init__(self, initial_capital, initial_portfolio: Dict[str, int], asset_slicing: int,
                  max_assets_in_action: int):
-        self.capital = initial_capital
+        self.initial_capital = initial_capital
         self.portfolio = initial_portfolio
         self.max_assets_in_action = max_assets_in_action
         self.asset_slicing = asset_slicing
@@ -69,7 +69,7 @@ class Attacker(Player):
         if not isinstance(order, Sell):
             raise ValueError("attacker only sells")
 
-        self.capital += order.share_price * order.num_shares
+        self.initial_capital += order.share_price * order.num_shares
         num_shares = self.portfolio[order.asset_symbol]
         num_shares -= order.num_shares
         if num_shares == 0:
@@ -157,7 +157,7 @@ class Defender(Player):
     ' think: should we allow selling of assets when capital is zero?'
     def resources_exhusted(self):
         'allow overdraft?'
-        if self.capital <= 0:
+        if self.initial_capital <= 0:
             self.resources_exhusted_flag = True
 
         return self.resources_exhusted_flag
@@ -167,7 +167,7 @@ class Defender(Player):
     def apply_order(self, order: Buy):
         if not isinstance(order, Buy):
             raise ValueError("attacker only buys")
-        self.capital -= order.share_price * order.num_shares
+        self.initial_capital -= order.share_price * order.num_shares
         num_shares = self.portfolio[order.asset_symbol] if order.asset_symbol in self.portfolio else 0
         num_shares += order.num_shares
         self.portfolio[order.asset_symbol] = num_shares
@@ -179,7 +179,7 @@ class Defender(Player):
         capital_needed = 0
         for order in orders:
             capital_needed += order.share_price * order.num_shares
-            if capital_needed > self.capital:
+            if capital_needed > self.initial_capital:
                 return True
         return False
 
@@ -197,12 +197,12 @@ class Defender(Player):
         action_required_capital = 0
         while not orders: #in case no valid orders for the entire iteration
             i = 0
-            while i < num_assets and action_required_capital < self.capital:
+            while i < num_assets and action_required_capital < self.initial_capital:
                 asset = chosen_assets[i]
                 portion = random.randint(1, self.asset_slicing)
                 order_required_capital = portion * asset.price * asset.daily_volume/ self.asset_slicing
-                if order_required_capital + action_required_capital > self.capital:
-                    portion = int(floor((self.capital * self.asset_slicing) / (asset.price * asset.daily_volume)))
+                if order_required_capital + action_required_capital > self.initial_capital:
+                    portion = int(floor((self.initial_capital * self.asset_slicing) / (asset.price * asset.daily_volume)))
                 order = Buy(asset.symbol, portion*chosen_assets[i].daily_volume/self.asset_slicing, asset.price)
                 action_required_capital += order_required_capital
                 orders.append(order)
@@ -219,7 +219,7 @@ class Defender(Player):
         orders_list.extend(orders_to_add)
         capital_jump = asset.price * asset.daily_volume / self.asset_slicing
         capital_needed = capital_jump
-        while buy_slice <= self.asset_slicing and capital_needed <= self.capital:
+        while buy_slice <= self.asset_slicing and capital_needed <= self.initial_capital:
             shares_to_buy = int(asset.daily_volume * buy_slice / self.asset_slicing)
             if asset.price * shares_to_buy < SysConfig.get(SysConfig.MIN_ORDER_VALUE):  # ignore small orders
                 buy_slice += 1
@@ -230,7 +230,7 @@ class Defender(Player):
                 orders = tup[0]
                 orders_capital = tup[1]
                 total_capital = capital_needed + orders_capital
-                if len(orders) < self.max_assets_in_action and total_capital <= self.capital:
+                if len(orders) < self.max_assets_in_action and total_capital <= self.initial_capital:
                     order_including_asset = list(orders)
                     order_including_asset.append(order)
                     orders_list.append((order_including_asset, total_capital))
@@ -248,7 +248,7 @@ class Defender(Player):
         orders_list.extend(orders_to_add)
         capital_jump = self.buy_share_portion_jump * asset.price * asset.daily_volume
         capital_needed = capital_jump
-        while buy_percent <= 1 and capital_needed <= self.capital:
+        while buy_percent <= 1 and capital_needed <= self.initial_capital:
             shares_to_buy = int(buy_percent * asset.daily_volume)
             order = Buy(asset.symbol, shares_to_buy, asset.price)
             orders_list.append(([order], capital_needed))
@@ -256,7 +256,7 @@ class Defender(Player):
                 orders = tup[0]
                 orders_capital = tup[1]
                 total_capital = capital_needed + orders_capital
-                if len(orders) < self.max_assets_in_action and total_capital <= self.capital:
+                if len(orders) < self.max_assets_in_action and total_capital <= self.initial_capital:
                     order_including_asset = list(orders)
                     order_including_asset.append(order)
                     orders_list.append((order_including_asset, total_capital))
