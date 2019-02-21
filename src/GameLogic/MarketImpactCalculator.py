@@ -28,5 +28,5 @@ class SqrtMarketImpactCalculator(MarketImpactCalculator):
         if isinstance(order, Sell):
             return 1 - delta
         if isinstance(order, Buy):
-            return 1+ delta
+            return 1 + delta
         raise ValueError

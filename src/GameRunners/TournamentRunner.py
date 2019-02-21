@@ -5,7 +5,7 @@ from copy import deepcopy
 from GameLogic import GameState
 from GameLogic.AssetFundNetwork import AssetFundsNetwork
 from GameLogic.GameConfig import GameConfig
-from GameLogic.MarketImpactCalculator import ExponentialMarketImpactCalculator
+from GameLogic.MarketImpactCalculator import ExponentialMarketImpactCalculator, SqrtMarketImpactCalculator
 from GameLogic.Players import Attacker, RobustDefender, OracleDefender, Defender
 from GameRunners.MCTS import UCT
 
@@ -47,8 +47,8 @@ class SingleTournamentRunner:
             return RobustDefender(config.defender_initial_capital,
                                   config.defender_asset_slicing, self.config.defender_max_assets_in_action)
         if alg == 'oracle':
-            return OracleDefender(goals, config.defender_initial_capital,
-                                  config.defender_asset_slicing, self.config.defender_max_assets_in_action)
+            return OracleDefender(config.defender_initial_capital,
+                                  config.defender_asset_slicing, self.config.defender_max_assets_in_action, goals)
         raise ValueError
 
     def gen_attacker(self, network, attacker_goals):
@@ -61,8 +61,17 @@ class SingleTournamentRunner:
         return Attacker(initial_portfolio=attacker_portfolio, goals=attacker_goals, asset_slicing=self.config.attacker_asset_slicing,
                          max_assets_in_action=self.config.attacker_max_assets_in_action)
 
+    def print_portfolios(self, network, attacker):
+        for fund in attacker.goals:
+            p = network.funds[fund].portfolio
+            print(str(fund) + ':' + str(p))
+        print('attacker:')
+        print(str(attacker.portfolio))
+
     def play_single_game(self, network, attacker, defender):
         state = GameState.TwoPlayersGameState(network, attacker, defender)
+        if self.config.verbose:
+            self.print_portfolios(state.network, attacker)
         moves_counter = 0
         while not state.game_ended():
             moves_counter += 1
@@ -71,10 +80,12 @@ class SingleTournamentRunner:
                     state.move_turn()
                     continue
                 else:
-                    m = UCT(rootstate=state, itermax=1000,
+                    m = UCT(rootstate=state, itermax=100,
                             verbose=False)  # changed from 1000 for debugging # play with values for itermax and verbose = True
             else:
-                m = UCT(rootstate=state, itermax=1000, verbose=False)  # Attacker
+                m = UCT(rootstate=state, itermax=100, verbose=False)  # Attacker
+            if self.config.verbose:
+                print(str(m) + "\n")
             state.apply_action(m)
         if state.game_ended():
             self.stats.update_stats(state.get_winner(), moves_counter)
@@ -82,7 +93,7 @@ class SingleTournamentRunner:
     def run_single_tournament(self):
         for g in range(self.num_games):
             print('iteration ' + str(g))
-            self.play_single_game(deepcopy(self.network), deepcopy(self.attacker), deepcopy(self.attacker))
+            self.play_single_game(deepcopy(self.network), deepcopy(self.attacker), deepcopy(self.defender))
         return self.stats.get_stats()
 
 
@@ -92,8 +103,8 @@ class MultipleTournamentRunner:
         self.config = config
         self.num_games_per_tournaments = num_games_per_tournament
         self.network = AssetFundsNetwork.load_from_file(network_file_name,
-                                                        ExponentialMarketImpactCalculator(self.config.impact_calc_constant))
-        self.network.run_intraday_simulation(config.intraday_asset_gain_max_range)
+                                                        SqrtMarketImpactCalculator())
+        self.network.run_intraday_simulation(config.intraday_asset_gain_max_range, 0.7)
         self.defender_alg = defender_alg
         fieldnames = ['goals', 'attacker_wins', 'defender_wins', 'avg_num_moves', 'defender_alg']
         fieldnames.extend(self.config.__dict__.keys())
@@ -133,9 +144,11 @@ class MultipleTournamentRunner:
 
 if __name__ == "__main__":
     config = GameConfig()
-    csv_file_name = '../../resources/ten_by_ten_oracle.csv'
-    runner = MultipleTournamentRunner(csv_file_name, 10, '../../resources/ten_by_ten_network.json', 'oracle', config)
-    goals = [['f0', 'f1'], ['f0']]
+    config.num_assets = 10
+    config.num_funds = 10
+    csv_file_name = '../../resources/ten_by_ten_robust.csv'
+    runner = MultipleTournamentRunner(csv_file_name, 10, '../../resources/ten_by_ten.json', 'robust', config)
+    goals = [['f0', 'f2']]
     runner.run_for_goals_set(goals)
     exit(0)
 

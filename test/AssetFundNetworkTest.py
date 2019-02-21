@@ -52,7 +52,7 @@ class TestFund  (unittest.TestCase):
     def test_compute_compute_curr_leverage(self):
         assets = {'XXX': Asset(1, 20, 1.5, 'XXX'), 'YYY': Asset(4, 20, 1.5, 'yyy')}
         fund = Fund('F1', {'XXX': 10, 'YYY': 10}, 5, 2, 3)
-        self.assertEqual(9, fund.compute_curr_leverage(assets))
+        self.assertEqual(0.25, fund.compute_curr_leverage(assets))
 
     def test_marginal_call_false(self):
         assets = {'XXX': Asset(1, 20, 1.5, 'XXX'), 'YYY': Asset(4, 20, 1.5, 'yyy')}
@@ -167,18 +167,18 @@ class TestAssetFundsNetwork  (unittest.TestCase):
         self.assertEqual(network, expected_network)
 
     def test_apply_action_with_liquidation(self):
-        a0 = Asset(price=1, daily_volume=40,volatility=1.5,  symbol='a0')
-        a1 = Asset(price=2, daily_volume=40,volatility=1.5,  symbol='a1')
-        f0 = Fund('f0', {'a0': 10}, initial_capital=2, initial_leverage=8, tolerance=2)
-        f1 = Fund('f1', {'a0': 10, 'a1': 1}, initial_capital=1, initial_leverage=1, tolerance=3)
+        a0 = Asset(price=1, daily_volume=40, volatility=1.5,  symbol='a0')
+        a1 = Asset(price=2, daily_volume=40, volatility=1.5,  symbol='a1')
+        f0 = Fund('f0', {'a0': 10}, initial_capital=2, initial_leverage=8, tolerance=1.01)
+        f1 = Fund('f1', {'a0': 10, 'a1': 1}, initial_capital=1, initial_leverage=1, tolerance=1.01)
         network = AssetFundsNetwork({'f0': f0, 'f1': f1}, {'a0': a0, 'a1': a1},
                                     MockMarketImpactTestCalculator())
         a = [Sell('a0', num_shares=10, share_price=2), Buy('a1', num_shares=10, share_price=2)]
         network.apply_action(a)
 
-        expected_a0 = Asset(price=0.0625, daily_volume=40,volatility=1.5,  symbol='a0')
-        expected_a1 = Asset(price=8.0, daily_volume=40,volatility=1.5,  symbol='a1')
-        expected_f0 = Fund('f0', {}, initial_capital=2, initial_leverage=8, tolerance=2)
+        expected_a0 = Asset(price=0.0625, daily_volume=40, volatility=1.5,  symbol='a0')
+        expected_a1 = Asset(price=8.0, daily_volume=40, volatility=1.5,  symbol='a1')
+        expected_f0 = Fund('f0', {}, initial_capital=2, initial_leverage=8, tolerance=1.01)
         expected_network = AssetFundsNetwork({'f0': expected_f0, 'f1': f1}, {'a0': expected_a0, 'a1': expected_a1},
                                              MockMarketImpactTestCalculator())
 
@@ -195,18 +195,31 @@ class TestAssetFundsNetwork  (unittest.TestCase):
         actual_canonical_form = network.get_canonical_form()
         self.assertTrue(np.array_equal(expected_canonical_form, actual_canonical_form))
 
-    def test_run_intraday_simulation_price_not_changed(self):
+    def test_run_intraday_simulation_price_rises(self):
         a0 = Asset(price=1, daily_volume=40, volatility=1.5, symbol='a0')
         a1 = Asset(price=2, daily_volume=40, volatility=1.5, symbol='a1')
         f0 = Fund('f0', {'a0': 10}, initial_capital=2, initial_leverage=8, tolerance=2)
         f1 = Fund('f1', {'a0': 10, 'a1': 1}, initial_capital=1, initial_leverage=1, tolerance=3)
         network = AssetFundsNetwork({'f0': f0, 'f1': f1}, {'a0': a0, 'a1': a1},
                                     MockMarketImpactTestCalculator())
-        network.run_intraday_simulation(1.5)
+        network.run_intraday_simulation(1.5, 1)
         self.assertTrue(a0.price >= 1)
         self.assertTrue(a1.price >= 2)
 
-    def test_run_intraday_simulation_raises_exception_for_proce_reduction(self):
+    def test_run_intraday_simulation_goal_leverage_reached(self):
+        a0 = Asset(price=1, daily_volume=40, volatility=1.5, symbol='a0')
+        a1 = Asset(price=2, daily_volume=40, volatility=1.5, symbol='a1')
+        f0 = Fund('f0', {'a0': 10}, initial_capital=2, initial_leverage=8, tolerance=2)
+        f1 = Fund('f1', {'a0': 10, 'a1': 1}, initial_capital=1, initial_leverage=1, tolerance=3)
+        assets = {'a0': a0, 'a1': a1}
+        network = AssetFundsNetwork({'f0': f0, 'f1': f1}, assets,
+                                    MockMarketImpactTestCalculator())
+        network.run_intraday_simulation(2, 0.8)
+        self.assertTrue(f0.compute_curr_leverage(assets) <= 0.8)
+        self.assertTrue(f1.compute_curr_leverage(assets) <= 0.8)
+
+
+    def test_run_intraday_simulation_raises_exception_for_price_reduction(self):
         a0 = Asset(price=1, daily_volume=40, volatility=1.5, symbol='a0')
         a1 = Asset(price=2, daily_volume=40, volatility=1.5, symbol='a1')
         f0 = Fund('f0', {'a0': 10}, initial_capital=2, initial_leverage=8, tolerance=2)
@@ -215,7 +228,7 @@ class TestAssetFundsNetwork  (unittest.TestCase):
                                     MockMarketImpactTestCalculator())
 
         with self.assertRaises(ValueError):
-            network.run_intraday_simulation(0.8)
+            network.run_intraday_simulation(0.8, 0.7)
 
 
 if __name__ == '__main__':

@@ -1,7 +1,7 @@
 #!/usr/bin/python
 import json
 import random
-from math import floor
+from math import floor, inf
 
 import networkx as nx
 import numpy
@@ -32,11 +32,12 @@ class Asset:
 
 
 class Fund:
-    def __init__(self, symbol, portfolio: Dict[str, int], initial_capital, initial_leverage, tolerance, ):
+    def __init__(self, symbol, portfolio: Dict[str, int], initial_capital, initial_leverage, tolerance):
         self.symbol = symbol
         self.portfolio = portfolio
         self.initial_leverage = initial_leverage
         self.capital = initial_capital
+        self.loan = initial_capital*initial_leverage
         self.tolerance = tolerance
 
     def __eq__(self, other):
@@ -45,7 +46,9 @@ class Fund:
                self.portfolio == other.portfolio and \
                self.initial_leverage == other.initial_leverage and \
                self.capital == other.capital and \
-               self.tolerance == other.tolerance
+               self.tolerance == other.tolerance and \
+               self.loan == other.loan
+
 
     def gen_liquidation_orders(self):
         orders = []
@@ -59,19 +62,28 @@ class Fund:
     def is_liquidated(self):
         return not self.portfolio
 
+    def compute_curr_capital(self, assets):
+        return self.compute_portfolio_value(assets) - self.loan
+
     def compute_portfolio_value(self, assets):
         v = 0
         for asset_symbol, num_shares in self.portfolio.items():
             v += num_shares * assets[asset_symbol].price
         return v
 
-    """ leverage = curr_portfolio_value / curr_capital -1"""
+    """ leverage = curr_portfolio_value / curr_capital -1
+       = curr_portfolio_value/(curr_portfolio_value - loan) -1
+    """
 
     def compute_curr_leverage(self, assets):
-            return self.compute_portfolio_value(assets) / self.capital - 1
+        curr_portfolio_value = self.compute_portfolio_value(assets)
+        curr_capital = curr_portfolio_value - self.loan
+        if curr_capital <= 0:
+            return inf
+        return curr_portfolio_value / curr_capital - 1 #return self.compute_portfolio_value(assets) / self.capital - 1
 
     def marginal_call(self, assets):
-        return self.compute_curr_leverage(assets) / self.initial_leverage < self.tolerance
+        return self.compute_curr_leverage(assets) / self.initial_leverage > self.tolerance
 
 
 class AssetFundsNetwork:
@@ -80,7 +92,7 @@ class AssetFundsNetwork:
         self.funds = funds
         self.assets = assets
         if intraday_asset_gain_max_range:
-            self.run_intraday_simulation(intraday_asset_gain_max_range)
+            self.run_intraday_simulation(intraday_asset_gain_max_range, 0.7)
 
     def __eq__(self, other):
         return isinstance(other, AssetFundsNetwork) and isinstance(other.mi_calc, type(self.mi_calc)) and \
@@ -89,12 +101,26 @@ class AssetFundsNetwork:
     def __repr__(self):
         return str(self.funds)
 
-    def run_intraday_simulation(self, intraday_asset_gain_max_range):
+    def are_funds_leveraged_less_than(self, leverage_goal):
+        for fund in self.funds.values():
+            if leverage_goal < fund.compute_curr_leverage(self.assets):
+                return False
+        return True
+
+    def run_intraday_simulation_2(self, intraday_asset_gain_max_range):
         if (intraday_asset_gain_max_range < 1):
             raise ValueError
         for asset in self.assets.values():
             price_gain = random.uniform(1, intraday_asset_gain_max_range)
             asset.set_price(asset.price * price_gain)
+
+    def run_intraday_simulation(self, intraday_asset_gain_max_range, leverage_goal):
+        if intraday_asset_gain_max_range < 1:
+            raise ValueError
+        while not self.are_funds_leveraged_less_than(leverage_goal):
+            for asset in self.assets.values():
+                price_gain = random.uniform(1, intraday_asset_gain_max_range)
+                asset.set_price(asset.price * price_gain)
 
     @classmethod
     def generate_random_network(cls, density, num_funds, num_assets, initial_capitals, initial_leverages,

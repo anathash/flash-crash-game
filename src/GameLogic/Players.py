@@ -22,6 +22,7 @@ class Player:
     def get_valid_actions(self, assets: Dict[str, Asset]):
         raise NotImplementedError
 
+
     def gen_random_action(self, assets: Dict[str, Asset]):
         raise NotImplementedError
 
@@ -206,7 +207,6 @@ class Defender(Player):
                 action_required_capital += order_required_capital
                 orders.append(order)
                 i += 1
-
         return orders
 
     def gen_orders_rec(self, assets: List[Asset]):
