@@ -14,7 +14,7 @@ from GameLogic.AssetFundNetwork import AssetFundsNetwork
 from GameLogic.GameConfig import GameConfig
 from GameLogic.GameState import SinglePlayerGameState
 from GameRunners.MCTS import UCT
-from GameLogic.MarketImpactCalculator import ExponentialMarketImpactCalculator
+from GameLogic.MarketImpactCalculator import ExponentialMarketImpactCalculator, SqrtMarketImpactCalculator
 
 
 class TypeInfrenceCoach():
@@ -38,8 +38,10 @@ class TypeInfrenceCoach():
             state.apply_action(m)
         if state.game_ended():
             if state.attacker.game_reward(state.network.funds) == 1:
+                print('win in ' + str(len(states)) + ' moves')
                 return [(states, state.attacker.goals)]
             else:
+                print('lose in ' + len(state) + ' moves')
                 return []
 
 
@@ -176,7 +178,7 @@ class TypeInfrenceCoach():
             goals_list = self.gen_goals_fund_list(goals_vector)
             goals_string = ''.join([str(x) for x in goals_list])
             portfolio = self.create_portofolio(network, goals_list)
-            initial_state = SinglePlayerGameState(network, portfolio,goals_list,
+            initial_state = SinglePlayerGameState(deepcopy(network), portfolio,goals_list,
                                                   self.config.attacker_asset_slicing,
                                                   self.config.attacker_max_assets_in_action)
 
@@ -187,9 +189,10 @@ class TypeInfrenceCoach():
             self.saveGoalsExamples(goals_string, train_examples)
 
 if __name__ == "__main__":
-    config = GameConfig(num_funds=4, num_assets=4)
-    coach = TypeInfrenceCoach('../../resources/examples', config)
-    coach.loadTrainExamples('../../resources/examples/checkpoint_f0.pth.tar.examples')
-    network = AssetFundsNetwork.load_from_file('../../resources/four_by_four_network.json', ExponentialMarketImpactCalculator(1.0536))
-    coach.gen_training_examples(network, episodes_per_goal=2, uct_iterations=10)
+    config = GameConfig(num_funds=10, num_assets=10)
+    coach = TypeInfrenceCoach('../../resources/examples/ten by ten', config)
+    #coach.loadTrainExamples('../../resources/examples/checkpoint_f0.pth.tar.examples')
+    network = AssetFundsNetwork.load_from_file('../../resources/ten_by_ten.json', SqrtMarketImpactCalculator())
+    network.run_intraday_simulation(config.intraday_asset_gain_max_range, 0.7 * config.initial_leverage)
+    coach.gen_training_examples(network, episodes_per_goal=10, uct_iterations=10)
 

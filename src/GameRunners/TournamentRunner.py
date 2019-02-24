@@ -104,7 +104,7 @@ class MultipleTournamentRunner:
         self.num_games_per_tournaments = num_games_per_tournament
         self.network = AssetFundsNetwork.load_from_file(network_file_name,
                                                         SqrtMarketImpactCalculator())
-        self.network.run_intraday_simulation(config.intraday_asset_gain_max_range, 0.7)
+        self.network.run_intraday_simulation(config.intraday_asset_gain_max_range, 0.7*config.initial_leverage)
         self.defender_alg = defender_alg
         fieldnames = ['goals', 'attacker_wins', 'defender_wins', 'avg_num_moves', 'defender_alg']
         fieldnames.extend(self.config.__dict__.keys())
@@ -118,6 +118,7 @@ class MultipleTournamentRunner:
 
     def run_for_goals_set(self, goals_set):
         for goals in goals_set:
+            print(str(goals))
             tournament_runner = SingleTournamentRunner(self.num_games_per_tournaments, self.network,
                                                        self.defender_alg, goals, self.config)
             params = {'goals': '-'.join(goals)}
@@ -144,11 +145,11 @@ class MultipleTournamentRunner:
 
 if __name__ == "__main__":
     config = GameConfig()
-    config.num_assets = 10
-    config.num_funds = 10
-    csv_file_name = '../../resources/ten_by_ten_robust.csv'
-    runner = MultipleTournamentRunner(csv_file_name, 10, '../../resources/ten_by_ten.json', 'robust', config)
-    goals = [['f0', 'f2']]
+    config.num_assets = 20
+    config.num_funds = 20
+    csv_file_name = '../../resources/twenty_by_twenty_oracle.csv'
+    runner = MultipleTournamentRunner(csv_file_name, 10, '../../resources/twenty_by_twenty_network.json', 'oracle', config)
+    goals = [['f0', 'f2'], ['f3']]
     runner.run_for_goals_set(goals)
     exit(0)
 

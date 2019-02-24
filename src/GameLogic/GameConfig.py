@@ -1,10 +1,10 @@
 class GameConfig:
-    def __init__(self, num_assets=50,
-                 num_funds=50,
+    def __init__(self, num_assets=10,
+                 num_funds=10,
                  min_order_value=1000,
                  density=0.5,
                  asset_daily_volume=5000,
-                 asset_volatility=1.05,
+                 asset_volatility=1.2,
                  initial_asset_price=1000,
                  initial_fund_capital=500000,
                  initial_leverage=2,
@@ -12,12 +12,12 @@ class GameConfig:
                  attacker_portfolio_ratio=0.05,
                  attacker_max_assets_in_action=1,
                  attacker_asset_slicing=20,
-                 defender_max_assets_in_action=3,
+                 defender_max_assets_in_action=1,
                  defender_asset_slicing=20,
-                 defender_initial_capital=10000000,
+                 defender_initial_capital=6000000,
                  impact_calc_constant=1.0536,
                  intraday_asset_gain_max_range=1.1,
-                 verbose = False):
+                 verbose=False):
 
         self.num_assets = num_assets
         self.num_funds = num_funds

@@ -84,11 +84,28 @@ class Attacker(Player):
         return 1
 
     def get_valid_actions(self, assets: Dict[str, Asset]):
-        assets = [assets[x] for x in self.portfolio.keys()]
-        orders = self.gen_orders_rec(assets)
+        assets_list = [assets[x] for x in self.portfolio.keys()]
+        if self.max_assets_in_action > 1:
+            orders = self.gen_orders_rec(assets_list)
+        else:
+            orders = self.gen_single_asset_orders(assets_list)
         if not orders:
             self.resources_exhusted_flag = True
         return orders
+
+    def gen_single_asset_orders(self, assets: List[Asset]):
+        if not assets:
+            return []
+        orders_list = []
+        for asset in assets:
+            for i in range(1, self.asset_slicing + 1):
+                shares_to_sell = int(i * self.portfolio[asset.symbol] / self.asset_slicing)
+                if asset.price * shares_to_sell < SysConfig.get(SysConfig.MIN_ORDER_VALUE): #ignore small orders
+                    continue
+                order = Sell(asset.symbol, shares_to_sell, asset.price)
+                orders_list.append([order])
+        return orders_list
+
 
     def gen_orders_rec(self, assets: List[Asset]):
         if not assets:
@@ -184,11 +201,15 @@ class Defender(Player):
         return False
 
     def get_valid_actions(self, assets: Dict[str, Asset] = None):
-        orders_list = self.gen_orders_rec(list(assets.values()))
+        if self.max_assets_in_action > 1:
+            orders_list_tup = self.gen_orders_rec(list(assets.values()))
+            orders_list = [x[0] for x in orders_list_tup]
+        else:
+            orders_list = self.gen_single_asset_orders(list(assets.values()))
         if not orders_list:
             self.resources_exhusted_flag = True
             return []
-        return [x[0] for x in orders_list]
+        return orders_list
 
     def gen_random_action(self, assets: Dict[str, Asset] = None):
         orders = []
@@ -208,6 +229,23 @@ class Defender(Player):
                 orders.append(order)
                 i += 1
         return orders
+
+    def gen_single_asset_orders(self, assets: List[Asset]):
+        orders_list = []
+        for asset in assets:
+            buy_slice = 1
+            capital_jump = asset.price * asset.daily_volume / self.asset_slicing
+            capital_needed = capital_jump
+            while buy_slice <= self.asset_slicing and capital_needed <= self.initial_capital:
+                shares_to_buy = int(asset.daily_volume * buy_slice / self.asset_slicing)
+                if asset.price * shares_to_buy < SysConfig.get(SysConfig.MIN_ORDER_VALUE):  # ignore small orders
+                    buy_slice += 1
+                    continue
+                order = Buy(asset.symbol, shares_to_buy, asset.price)
+                orders_list.append([order])
+                buy_slice += 1
+                capital_needed += capital_jump
+        return orders_list
 
     def gen_orders_rec(self, assets: List[Asset]):
         if not assets:

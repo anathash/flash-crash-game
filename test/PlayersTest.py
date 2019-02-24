@@ -67,6 +67,16 @@ class AttackerTest  (unittest.TestCase):
         a = to_string_list(actual_orders)
         self.assertListEqual(e, a)
 
+    def test_get_valid_actions_single_asset(self):
+        attacker = Attacker({'a1': 300, 'a2': 400}, ['f1', 'f2'], 2, 1)
+        expected_orders = \
+            [[Sell('a1', 150, 2)], [Sell('a1', 300, 2)],
+             [Sell('a2', 200, 2)], [Sell('a2', 400, 2)]]
+        e = to_string_list(expected_orders)
+        actual_orders = attacker.get_valid_actions({'a1': Asset(2, 200, 1.5, 'a1'), 'a2': Asset(2, 300, 1.5, 'a2')})
+        a = to_string_list(actual_orders)
+        self.assertListEqual(e, a)
+
     def test_get_valid_actions(self):
         attacker = Attacker({'a1': 300, 'a2': 400}, ['f1', 'f2'], 2, 2)
         expected_orders = \
@@ -88,6 +98,18 @@ class AttackerTest  (unittest.TestCase):
              [Sell('a2', 200, 2)], [Sell('a2', 400, 2)]]
         e = to_string_list(expected_orders)
         actual_orders = attacker.get_valid_actions({'a1': Asset(2, 200, 1.5, 'a1'), 'a2': Asset(2, 300, 1.5, 'a2')})
+        a = to_string_list(actual_orders)
+        self.assertListEqual(e, a)
+
+    def test_get_valid_actions_single_asset2(self):
+        attacker = Attacker({'a1': 300, 'a2': 400, 'a3': 100}, ['f1', 'f2'], 2, 1)
+        expected_orders = \
+            [[Sell('a1', 150, 2)], [Sell('a1', 300, 2)],
+             [Sell('a2', 200, 2)], [Sell('a2', 400, 2)],
+             [Sell('a3', 50, 2)], [Sell('a3', 100, 2)]]
+        e = to_string_list(expected_orders)
+        actual_orders = attacker.get_valid_actions({'a1': Asset(2, 500, 1.5, 'a1'), 'a2': Asset(2, 500, 1.5, 'a2'),
+                                                    'a3': Asset(2, 500, 1.5, 'a3')})
         a = to_string_list(actual_orders)
         self.assertListEqual(e, a)
 
@@ -118,6 +140,12 @@ class AttackerTest  (unittest.TestCase):
     def test_gen_random_action(self):
         assets = {'a1': Asset(2, 500, 1.5, 'a1'), 'a2': Asset(2, 500, 1.5, 'a2'), 'a3': Asset(2, 500, 1.5, 'a3')}
         attacker = Attacker({'a1': 300, 'a2': 400, 'a3': 100}, ['f1', 'f2'], 2, 2)
+        for i in range(0, 100):
+            orders = attacker.gen_random_action(assets)
+            for order in orders:
+                self.assert_valid_order(attacker, order, assets)
+
+        attacker = Attacker({'a1': 300, 'a2': 400, 'a3': 100}, ['f1', 'f2'], 2, 1)
         for i in range(0, 100):
             orders = attacker.gen_random_action(assets)
             for order in orders:
@@ -206,6 +234,15 @@ class RobustDefenderTest  (unittest.TestCase):
         a = to_string_list(actual_orders)
         self.assertListEqual(e, a)
 
+    def test_get_valid_actions_single_asset(self):
+        defender = RobustDefender(500, 2, 1)
+        expected_orders = \
+            [[Buy('a1', 100, 2)], [Buy('a1', 200, 2)], [Buy('a2', 150, 2)]]
+        e = to_string_list(expected_orders)
+        actual_orders = defender.get_valid_actions({'a1': Asset(2, 200, 1.5, 'a1'), 'a2': Asset(2, 300, 1.5, 'a2')})
+        a = to_string_list(actual_orders)
+        self.assertListEqual(e, a)
+
     def test_get_valid_actions_max_assets(self):
         defender = RobustDefender(500, 2, 1)
         expected_orders = \
@@ -233,8 +270,31 @@ class RobustDefenderTest  (unittest.TestCase):
         a = to_string_list(actual_orders)
         self.assertListEqual(e, a)
 
+
+    def test_get_valid_actions2_single_asset(self):
+        defender = RobustDefender(500, 2, 1)
+        expected_orders = \
+            [[Buy('a1', 100, 2)], [Buy('a1', 200, 2)], [Buy('a2', 150, 2)],
+             [Buy('a3', 50, 2)], [Buy('a3', 100, 2)]]
+
+        e = to_string_list(expected_orders)
+        actual_orders = defender.get_valid_actions({'a1': Asset(2, 200, 1.5, 'a1'), 'a2': Asset(2, 300, 1.5, 'a2'),
+                                                    'a3': Asset(2, 100, 1.5, 'a3')})
+        a = to_string_list(actual_orders)
+        self.assertListEqual(e, a)
+
+
     def test_gen_random_action(self):
         assets = {'a1': Asset(2, 500, 1.5, 'a1'), 'a2': Asset(2, 500, 1.5, 'a2'), 'a3': Asset(2, 500, 1.5, 'a3')}
+        defender = RobustDefender(500, 2, 2)
+        for i in range(100):
+            orders = defender.gen_random_action(assets)
+            required_capital = 0
+            for order in orders:
+                self.assert_valid_order(defender, order, assets)
+                required_capital += order.num_shares * order.share_price
+            self.assertTrue(required_capital <= defender.initial_capital)
+
         defender = RobustDefender(500, 2, 1)
         for i in range(100):
             orders = defender.gen_random_action(assets)
