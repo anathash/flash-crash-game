@@ -162,6 +162,14 @@ class TypeInfrenceCoach():
             Pickler(f).dump(examples)
         f.closed
 
+    def examples_collected(self, goals):
+        folder = self.example_folder_path
+        if not os.path.exists(folder):
+            return False
+        filename = os.path.join(folder, self.getCheckpointFile(goals) + ".examples")
+        if os.path.isfile(filename):
+            return True
+
     def gen_goals_fund_list(self, goals_vector):
         goals_list = []
         for i in range(len(goals_vector)):
@@ -170,18 +178,19 @@ class TypeInfrenceCoach():
         return goals_list
 
     def gen_training_examples(self, network, episodes_per_goal, uct_iterations):
-        goals = list(itertools.product([0, 1], repeat=self.config.num_funds))
-        goals = goals[1:]
-        for goal in goals:
-            train_examples = []
-            goals_vector = list(goal)
+        goals_set = list(itertools.product([0, 1], repeat=self.config.num_funds))
+        goals_set = goals_set[1:]
+        for goals in goals_set:
+            goals_vector = list(goals)
             goals_list = self.gen_goals_fund_list(goals_vector)
             goals_string = ''.join([str(x) for x in goals_list])
+            if self.examples_collected(goals_string):
+                continue
             portfolio = self.create_portofolio(network, goals_list)
             initial_state = SinglePlayerGameState(deepcopy(network), portfolio,goals_list,
                                                   self.config.attacker_asset_slicing,
                                                   self.config.attacker_max_assets_in_action)
-
+            train_examples = []
             for i in range(episodes_per_goal):
                 train_examples += self.executeEpisode(deepcopy(initial_state), uct_iterations)
 
