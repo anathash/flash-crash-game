@@ -17,54 +17,6 @@ class MockMarketImpactTestCalculator(MarketImpactCalculator):
             return order.num_shares / asset.daily_volume
 
 
-class TestAsset  (unittest.TestCase):
-    def test_set_price(self):
-        asset = Asset(2, 100, 1.5, 'a1')
-        asset.set_price(3)
-        self.assertEqual(3, asset.price)
-
-
-class TestFund  (unittest.TestCase):
-
-    def test_gen_liquidation_orders(self):
-        fund = Fund('F1', {'XXX': 10, 'YYY': 10}, 5, 2, 3)
-        expected_orders = [Sell('XXX', 10, None), Sell('YYY', 10, None)]
-        actual_orders = fund.gen_liquidation_orders()
-        self.assertEqual(expected_orders, actual_orders)
-
-    def test_liquidate(self):
-        fund = Fund('F1', {'XXX': 10, 'YYY': 10}, 5, 2, 3)
-        self.assertTrue(fund.portfolio)
-        fund.liquidate()
-        self.assertFalse(fund.portfolio)
-
-    def test_is_liquidated(self):
-        fund = Fund('F1', {'XXX': 10, 'YYY': 10}, 5, 2, 3)
-        self.assertFalse(fund.is_liquidated())
-        fund.liquidate()
-        self.assertFalse(fund.portfolio)
-
-    def test_compute_portfolio_value(self):
-        assets = {'XXX': Asset(1, 20, 1.5, 'XXX'), 'YYY': Asset(4, 20, 1.5, 'yyy')}
-        fund = Fund('F1', {'XXX': 10, 'YYY': 10}, 5, 2, 3)
-        self.assertEqual(50, fund.compute_portfolio_value(assets))
-
-    def test_compute_compute_curr_leverage(self):
-        assets = {'XXX': Asset(1, 20, 1.5, 'XXX'), 'YYY': Asset(4, 20, 1.5, 'yyy')}
-        fund = Fund('F1', {'XXX': 10, 'YYY': 10}, 5, 2, 3)
-        self.assertEqual(0.25, fund.compute_curr_leverage(assets))
-
-    def test_marginal_call_false(self):
-        assets = {'XXX': Asset(1, 20, 1.5, 'XXX'), 'YYY': Asset(4, 20, 1.5, 'yyy')}
-        fund = Fund('F1', {'XXX': 10, 'YYY': 10}, 5, 2, 3)
-        self.assertFalse(False, fund.marginal_call(assets))
-
-    def test_marginal_call_true(self):
-        assets = {'XXX': Asset(1, 20, 1.5, 'XXX'), 'YYY': Asset(1, 20, 1.5, 'yyy')}
-        fund = Fund('F1', {'XXX': 10, 'YYY': 10}, 5, 2, 3)
-        self.assertTrue(True, fund.marginal_call(assets))
-
-
 class TestAssetFundsNetwork  (unittest.TestCase):
 
     def test_encode_decode_network(self):

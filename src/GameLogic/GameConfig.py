@@ -3,7 +3,7 @@ class GameConfig:
                  num_funds=10,
                  min_order_value=1000,
                  density=0.5,
-                 asset_daily_volume=5000,
+                 asset_daily_volume=200000,
                  asset_volatility=1.2,
                  initial_asset_price=1000,
                  initial_fund_capital=500000,
@@ -38,6 +38,5 @@ class GameConfig:
         self.impact_calc_constant = impact_calc_constant
         self.intraday_asset_gain_max_range = intraday_asset_gain_max_range
         self.verbose = verbose
-
 
 

@@ -1,7 +1,7 @@
 #!/usr/bin/python
 import json
 import random
-from math import floor, inf
+from math import floor
 
 import networkx as nx
 import numpy
@@ -11,80 +11,11 @@ from typing import Dict, List
 import jsonpickle
 
 from GameLogic import MarketImpactCalculator
-from GameLogic.Orders import Order, Sell
+from GameLogic.Fund import Fund
+from GameLogic.Asset import Asset
+from GameLogic.Orders import Order
 
 'TODO: do we need the total market cap of assets or do funds hold the entire market'
-
-
-class Asset:
-    def __init__(self, price, daily_volume, volatility, symbol):
-        self.price = price
-        self.daily_volume = daily_volume
-        self.symbol = symbol
-        self.volatility = volatility
-
-    def set_price(self, new_price):
-        self.price = new_price
-
-    def __eq__(self, other):
-        return isinstance(other, Asset) and self.price == other.price and self.daily_volume == other.daily_volume \
-               and self.volatility == other.volatility and self.symbol == other.symbol
-
-
-class Fund:
-    def __init__(self, symbol, portfolio: Dict[str, int], initial_capital, initial_leverage, tolerance):
-        self.symbol = symbol
-        self.portfolio = portfolio
-        self.initial_leverage = initial_leverage
-        self.capital = initial_capital
-        self.loan = initial_capital*initial_leverage
-        self.tolerance = tolerance
-
-    def __eq__(self, other):
-        return isinstance(other, Fund) and \
-               self.symbol == other.symbol and \
-               self.portfolio == other.portfolio and \
-               self.initial_leverage == other.initial_leverage and \
-               self.capital == other.capital and \
-               self.tolerance == other.tolerance and \
-               self.loan == other.loan
-
-
-    def gen_liquidation_orders(self):
-        orders = []
-        for asset_symbol, num_shares in self.portfolio.items():
-            orders.append(Sell(asset_symbol, num_shares, None))
-        return orders
-
-    def liquidate(self):
-        self.portfolio = {}
-
-    def is_liquidated(self):
-        return not self.portfolio
-
-    def compute_curr_capital(self, assets):
-        return self.compute_portfolio_value(assets) - self.loan
-
-    def compute_portfolio_value(self, assets):
-        v = 0
-        for asset_symbol, num_shares in self.portfolio.items():
-            v += num_shares * assets[asset_symbol].price
-        return v
-
-    """ leverage = curr_portfolio_value / curr_capital -1
-       = curr_portfolio_value/(curr_portfolio_value - loan) -1
-    """
-
-    def compute_curr_leverage(self, assets):
-        curr_portfolio_value = self.compute_portfolio_value(assets)
-        curr_capital = curr_portfolio_value - self.loan
-        if curr_capital <= 0:
-            return inf
-        return curr_portfolio_value / curr_capital - 1 #return self.compute_portfolio_value(assets) / self.capital - 1
-
-    def marginal_call(self, assets):
-        return self.compute_curr_leverage(assets) / self.initial_leverage > self.tolerance
-
 
 class AssetFundsNetwork:
     def __init__(self, funds: Dict[str, Fund], assets: Dict[str, Asset], mi_calc: MarketImpactCalculator, intraday_asset_gain_max_range =None):
@@ -200,7 +131,17 @@ class AssetFundsNetwork:
                     board[i, j] = fund.portfolio[sym] * self.assets[sym].price
         return board
 
-    def apply_action(self, orders: List[Order]):
+    def get_liquidation_orders(self):
+        orders = []
+        for fund in self.funds.values():
+            orders.append(fund.get_orders(self.assets))
+        return orders
+
+    def apply_action(self):
+        for fund in self.funds.values():
+            fund.update_state(self.assets)
+
+    def apply_action_old(self, orders: List[Order]):
         liquidation_orders = []
         for order in orders:
             asset = self.assets[order.asset_symbol]

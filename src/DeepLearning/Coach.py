@@ -2,29 +2,18 @@
 
 from GameLogic import GameState
 from GameLogic.AssetFundNetwork import AssetFundsNetwork
+from GameLogic.GameConfig import GameConfig
 from GameRunners.MCTS import UCT
 from GameLogic.MarketImpactCalculator import ExponentialMarketImpactCalculator
 
 
-def UCTPlayGame():
+def UCTPlayGame(config, network_file_name, marketImpactCalc):
     """ Play a sample game between two UCT players where each player gets a different number
         of UCT iterations (= simulations = tree nodes).
     """
     # state = OthelloState(4) # uncomment to play Othello on a square board of the given size
     # state = OXOState() # uncomment to play OXO
-    num_funds = 3
-    num_assets = 3
-
-    assets_num_shares = [10000]*num_assets
-    initial_prices = [100]*num_assets
-
-    initial_capitals = [10000000]*num_funds
-    initial_leverages = [2]*num_funds
-    tolerances = [1.2]*num_funds
-
-    g = AssetFundsNetwork.generate_random_network(0.5, num_funds, num_assets, initial_capitals,
-                                                  initial_leverages, initial_prices,
-                                                  tolerances, assets_num_shares, ExponentialMarketImpactCalculator(1))
+    network = AssetFundsNetwork.load_from_file(network_file_name, marketImpactCalc, marketImpactCalc)
     goals = []
     attacker_portfolio = {}
     #num_goals = random.randint(1, num_funds/2)
@@ -35,9 +24,9 @@ def UCTPlayGame():
         goals.append(goal_fund_sym)
         goal_fund = g.funds[goal_fund_sym]
         for asset in goal_fund.portfolio:
-            attacker_portfolio[asset] = g.assets[asset].daily_volume*0.2
+            attacker_portfolio[asset] = network.assets[asset].daily_volume*0.2
 
-    state = GameState.SinglePlayerGameState(g, 100000, attacker_portfolio, goals, 10, 10, 1)  # uncomment to play Nim with the given number of starting chips
+    state = GameState.SinglePlayerGameState(network, 100000, attacker_portfolio, goals, 10, 10, 1)
     while (not state.game_ended()):
         print(str(state))
         m = UCT(rootstate=state, itermax=100, verbose=False) #Attacker
@@ -51,5 +40,8 @@ def UCTPlayGame():
 if __name__ == "__main__":
     """ Play a single game to the end using UCT for both players. 
     """
+    config = GameConfig()
+    config.num_assets = 10
+    config.num_funds = 10
     UCTPlayGame()
     exit(0)

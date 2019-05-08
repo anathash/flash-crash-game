@@ -1,12 +1,17 @@
-from GameLogic.Orders import Move
+from typing import List
+
+from GameLogic import Market
+from GameLogic.Orders import Move, Order
 from GameLogic.AssetFundNetwork import AssetFundsNetwork
 from GameLogic.Players import Defender, Attacker
 
 
 class GameState:
-    def __init__(self, network: AssetFundsNetwork, players):
+    def __init__(self, network: AssetFundsNetwork, players, market: Market):
         self.players = players
         self.network = network
+        self.market = market
+        self.liquidators = []
         self.turn = 0
 
     def current_player(self):
@@ -58,6 +63,33 @@ class GameState:
         return ret
 
 
+class TwoPlayersSimultaneousGameState(GameState):
+    def __init__(self, network, attacker, defender):
+        self.defender = defender
+        self.attacker = attacker
+        super().__init__(network, [self.attacker, self.defender])
+
+    def game_reward(self):
+        return self.defender.game_reward(self.network.funds)
+
+    def game_ended(self):
+        return self.attacker.is_goal_achieved(self.network.funds) or self.attacker.resources_exhusted()
+
+    def get_valid_actions(self):
+        return self.players[self.turn].get_valid_actions(self.network.assets)
+
+    def gen_random_action(self):
+        return self.players[self.turn].gen_random_action(self.network.assets)
+
+    def apply_action(self, action: List[Order]):
+        self.players[self.turn].apply_action(action)
+        for liquidator in self.liquidators:
+            self.market.submit_sell_orders(liquidator.get_orders(self.network.assets))
+        self.market.apply_actions()
+        self.liquidators.append(self.network.get_liquidaton_orders(action))
+        self.move_turn()
+
+
 class TwoPlayersGameState(GameState):
 
     def __init__(self, network, attacker, defender):
@@ -79,7 +111,10 @@ class TwoPlayersGameState(GameState):
 
     def apply_action(self, action: Move):
         self.players[self.turn].apply_action(action)
-        self.network.apply_action(action)
+        for liquidator in self.liquidators:
+            self.market.submit_sell_orders(liquidator.get_orders(self.network.assets))
+        self.market.apply_actions()
+        self.liquidators.append(self.network.get_liquidaton_orders(action))
         self.move_turn()
 
 

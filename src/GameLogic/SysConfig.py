@@ -3,6 +3,7 @@ class SysConfig:
     DENSITY = "DENSITY"
 
     __conf = {"MIN_ORDER_VALUE": 1000,
+              "MINUTE_VOLUME_LIMIT": 0.09,
               "DENSITY": 0.5
               }
 
