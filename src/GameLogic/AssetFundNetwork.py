@@ -137,7 +137,7 @@ class AssetFundsNetwork:
             orders.append(fund.get_orders(self.assets))
         return orders
 
-    def apply_action(self):
+    def update_funds(self):
         for fund in self.funds.values():
             fund.update_state(self.assets)
 

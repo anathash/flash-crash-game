@@ -55,7 +55,7 @@ class TestAssetFundsNetwork  (unittest.TestCase):
             self.assertEqual(volatility[i], asset.volatility)
         for i in range(len(funds)):
             fund = funds['f' + str(i)]
-            self.assertEqual(initial_capitals[i], fund.capital)
+            self.assertEqual(initial_capitals[i], fund.initial_capital)
             self.assertEqual(initial_leverages[i], fund.initial_leverage)
             self.assertEqual(tolerances[i], fund.tolerance)
 
@@ -87,7 +87,7 @@ class TestAssetFundsNetwork  (unittest.TestCase):
             self.assertEqual(volatility[i], asset.volatility)
         for i in range(len(funds)):
             fund = funds['f' + str(i)]
-            self.assertEqual(initial_capitals[i], fund.capital)
+            self.assertEqual(initial_capitals[i], fund.initial_capital)
             self.assertEqual(initial_leverages[i], fund.initial_leverage)
             self.assertEqual(tolerances[i], fund.tolerance)
         prot0 = funds['f0'].portfolio
@@ -100,41 +100,41 @@ class TestAssetFundsNetwork  (unittest.TestCase):
         self.assertEqual(prot1['a1'], 300)
         self.assertTrue('a0' not in prot1)
 
-    def test_apply_action_no_liquidation(self):
-        a0 = Asset(price=2, daily_volume=40, volatility=1.5, symbol='a0')
-        a1 = Asset(price=2, daily_volume=40, volatility=1.5,  symbol='a1')
-        f0 = Fund('f0', {'a0': 10, 'a1': 10}, 5, 2, 3)
-        f1 = Fund('f1', {'a0': 10, 'a1': 10}, 5, 2, 3)
-        f2 = Fund('f2', {'a0': 10, 'a1': 10}, 5, 2, 3)
-        network = AssetFundsNetwork({'f0': f0, 'f1': f1,'f2': f2}, {'a0': a0, 'a1': a1},
+    def test_update_funds(self):
+        assets = {'XXX': Asset(1, 20, 1.5, 'XXX'), 'YYY': Asset(1, 20, 1.5, 'yyy')}
+        f1 = Fund('F1', {'XXX': 10, 'YYY': 10}, 5, 2, 0.25)
+        f2 = Fund('F1', {'XXX': 5, 'YYY': 4}, 5, 2, 0.25)
+        f3 = Fund('F1', {'XXX': 20, 'YYY': 4}, 5, 2, 4)
+
+        network = AssetFundsNetwork({'f1': f1, 'f2': f2, 'f3': f3}, assets,
                                     MockMarketImpactTestCalculator())
-        a = [Sell('a0', num_shares=20, share_price=2), Buy('a1', num_shares=10, share_price=2)]
-        network.apply_action(a)
+        network.update_funds()
 
-        expected_a0 = Asset(price=1.0, daily_volume=40, volatility=1.5, symbol='a0')
-        expected_a1 = Asset(price=8.0, daily_volume=40, volatility=1.5, symbol='a1')
-        expected_network = AssetFundsNetwork({'f0': f0, 'f1': f1, 'f2': f2}, {'a0': expected_a0, 'a1': expected_a1},
-                                             MockMarketImpactTestCalculator())
+        self.assertTrue(f1.is_in_margin_call())
+        self.assertFalse(f1.default())
 
-        self.assertEqual(network, expected_network)
+        self.assertTrue(f2.is_in_margin_call())
+        self.assertTrue(f2.default())
 
-    def test_apply_action_with_liquidation(self):
-        a0 = Asset(price=1, daily_volume=40, volatility=1.5,  symbol='a0')
-        a1 = Asset(price=2, daily_volume=40, volatility=1.5,  symbol='a1')
+        self.assertFalse(f3.is_in_margin_call())
+        self.assertFalse(f3.default())
+
+        """a0 = Asset(price=1, daily_volume=40, volatility=1.5, symbol='a0')
+        a1 = Asset(price=2, daily_volume=40, volatility=1.5, symbol='a1')
         f0 = Fund('f0', {'a0': 10}, initial_capital=2, initial_leverage=8, tolerance=1.01)
         f1 = Fund('f1', {'a0': 10, 'a1': 1}, initial_capital=1, initial_leverage=1, tolerance=1.01)
         network = AssetFundsNetwork({'f0': f0, 'f1': f1}, {'a0': a0, 'a1': a1},
                                     MockMarketImpactTestCalculator())
         a = [Sell('a0', num_shares=10, share_price=2), Buy('a1', num_shares=10, share_price=2)]
-        network.apply_action(a)
+        network.update_funds()
 
-        expected_a0 = Asset(price=0.0625, daily_volume=40, volatility=1.5,  symbol='a0')
-        expected_a1 = Asset(price=8.0, daily_volume=40, volatility=1.5,  symbol='a1')
+        expected_a0 = Asset(price=0.0625, daily_volume=40, volatility=1.5, symbol='a0')
+        expected_a1 = Asset(price=8.0, daily_volume=40, volatility=1.5, symbol='a1')
         expected_f0 = Fund('f0', {}, initial_capital=2, initial_leverage=8, tolerance=1.01)
         expected_network = AssetFundsNetwork({'f0': expected_f0, 'f1': f1}, {'a0': expected_a0, 'a1': expected_a1},
                                              MockMarketImpactTestCalculator())
 
-        self.assertEqual(network, expected_network)
+        self.assertEqual(network, expected_network)"""
 
     def test_get_canonical_form(self):
         a0 = Asset(price=1, daily_volume=40, volatility=1.5, symbol='a0')
